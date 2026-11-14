@@ -26,11 +26,12 @@ class EstadoGestos:
     pos_y: float = 0.5                  # Normalizado [0.0, 1.0]
     dedos_levantados: list[bool] = field(default_factory=lambda: [False] * 5)
 
-    # Mano izquierda (control temporal relativo al movimiento)
+    # Mano izquierda (control temporal circular activado por puño cerrado)
     mano_izquierda_activa: bool = False
-    angulo_tiempo: float = 0.0          # Grados acumulados (puede superar +-360°)
-    velocidad_angular: float = 0.0      # Grados/frame (útil para modular velocidad/pitch en audio)
-    girando_activamente: bool = False   # True mientras describe un movimiento circular
+    puno_izquierdo_activo: bool = False   # True cuando la mano izquierda está en puño
+    angulo_tiempo: float = 0.0            # Grados acumulados (puede superar +-360°)
+    velocidad_angular: float = 0.0        # Grados/frame (útil para modular velocidad/pitch)
+    girando_activamente: bool = False     # True cuando hay puño Y movimiento circular
 
 
 # =====================================================================
@@ -53,6 +54,11 @@ class RastreadorManos:
         self.suavizado_mano_izq = 0.35      # Filtra micro-temblores de la mano
         self.seguimiento_centro = 0.065     # Qué tan rápido el eje sigue la deriva del movimiento
         self.radio_minimo = 0.035           # Umbral de movimiento para considerar que está girando
+
+        # Umbrales de cierre del puño (ratio distancia puntas-muñeca / tamaño palma)
+        # Mano abierta ~1.7-2.0 | Puño cerrado ~0.7-1.0
+        self.umbral_puno_cerrar = 1.15      # Debajo de este valor se activa el puño
+        self.umbral_puno_abrir = 1.35       # Encima de este valor se suelta (histéresis)
 
         self._pos_suave_izq: tuple[float, float] | None = None
         self._centro_dinamico_izq: tuple[float, float] | None = None
@@ -90,6 +96,52 @@ class RastreadorManos:
             dedos.append(bool(hand_landmarks[punta].y < hand_landmarks[art].y))
         return dedos
 
+    def _detectar_puno(
+        self, landmarks, ancho: int, alto: int, actualmente_cerrado: bool
+    ) -> bool:
+        """
+        Detecta si la mano está en puño midiendo qué tan cerca están las puntas
+        de los 4 dedos (8, 12, 16, 20) respecto a la muñeca (0), normalizado
+        por la longitud de la palma (0 a 9). Funciona en cualquier orientación.
+        """
+        aspecto = alto / ancho
+        muneca = landmarks[0]
+
+        # Longitud de referencia de la palma: muñeca (0) a nudillo medio (9)
+        escala_palma = max(
+            math.hypot(
+                landmarks[9].x - muneca.x,
+                (landmarks[9].y - muneca.y) * aspecto,
+            ),
+            1e-5,
+        )
+
+        # Promedio de distancias de las puntas de índice, medio, anular y meñique a la muñeca
+        puntas = [8, 12, 16, 20]
+        suma_distancias = sum(
+            math.hypot(
+                landmarks[idx].x - muneca.x,
+                (landmarks[idx].y - muneca.y) * aspecto,
+            )
+            for idx in puntas
+        )
+        ratio_promedio = (suma_distancias / len(puntas)) / escala_palma
+
+        umbral = (
+            self.umbral_puno_abrir
+            if actualmente_cerrado
+            else self.umbral_puno_cerrar
+        )
+        return ratio_promedio < umbral
+
+    def _resetear_tracking_izquierdo(self):
+        self._estado.puno_izquierdo_activo = False
+        self._estado.girando_activamente = False
+        self._estado.velocidad_angular = 0.0
+        self._pos_suave_izq = None
+        self._centro_dinamico_izq = None
+        self._ultimo_angulo_izq = None
+
     def procesar_frame(self, frame_bgr: np.ndarray) -> np.ndarray:
         """Procesa un frame en modo espejo, actualiza el estado y dibuja guías."""
         cam_alto, cam_ancho, _ = frame_bgr.shape
@@ -116,12 +168,10 @@ class RastreadorManos:
                         for lm in hand_landmarks
                     ]
 
-                    color_esqueleto = (0, 255, 0) if es_derecha else (255, 180, 0)
-                    for inicio, fin in self.HAND_CONNECTIONS:
-                        cv2.line(frame_bgr, puntos[inicio], puntos[fin], color_esqueleto, 2)
-
                     if es_derecha:
                         derecha_vista = True
+                        for inicio, fin in self.HAND_CONNECTIONS:
+                            cv2.line(frame_bgr, puntos[inicio], puntos[fin], (0, 255, 0), 2)
                         self._actualizar_mano_derecha(hand_landmarks, puntos, frame_bgr)
                     else:
                         izquierda_vista = True
@@ -135,12 +185,7 @@ class RastreadorManos:
 
             self._estado.mano_izquierda_activa = izquierda_vista
             if not izquierda_vista:
-                # Reiniciar estado dinámico para evitar saltos cuando vuelva a entrar la mano
-                self._estado.girando_activamente = False
-                self._estado.velocidad_angular = 0.0
-                self._pos_suave_izq = None
-                self._centro_dinamico_izq = None
-                self._ultimo_angulo_izq = None
+                self._resetear_tracking_izquierdo()
 
             estado_snapshot = copy.deepcopy(self._estado)
 
@@ -160,23 +205,43 @@ class RastreadorManos:
         cv2.circle(frame, puntos[9], 9, (0, 0, 255), -1)
 
     def _actualizar_mano_izquierda(self, landmarks, puntos, ancho, alto, frame):
+        puno_activo = self._detectar_puno(
+            landmarks, ancho, alto, self._estado.puno_izquierdo_activo
+        )
+        self._estado.puno_izquierdo_activo = puno_activo
+
+        # Dibujar esqueleto de la mano izquierda según su estado (verde = puño cerrado, naranja = abierta)
+        color_mano_izq = (0, 255, 0) if puno_activo else (0, 165, 255)
+        for inicio, fin in self.HAND_CONNECTIONS:
+            cv2.line(frame, puntos[inicio], puntos[fin], color_mano_izq, 2)
+
+        if not puno_activo:
+            # Mano abierta: pausar el giro y reiniciar el eje dinámico
+            self._estado.girando_activamente = False
+            self._estado.velocidad_angular = 0.0
+            self._pos_suave_izq = None
+            self._centro_dinamico_izq = None
+            self._ultimo_angulo_izq = None
+            return
+
+        # A partir de aquí solo se ejecuta mientras el puño está cerrado
         raw_x, raw_y = landmarks[9].x, landmarks[9].y
 
-        # Inicializar referencias en el punto exacto donde aparece la mano
+        # Inicializar el centro flotante en el punto exacto donde se cerró el puño
         if self._pos_suave_izq is None or self._centro_dinamico_izq is None:
             self._pos_suave_izq = (raw_x, raw_y)
             self._centro_dinamico_izq = (raw_x, raw_y)
             self._ultimo_angulo_izq = None
             return
 
-        # 1. Suavizar posición actual de la mano
+        # 1. Suavizar posición actual del puño
         sx = self._pos_suave_izq[0] + (raw_x - self._pos_suave_izq[0]) * self.suavizado_mano_izq
         sy = self._pos_suave_izq[1] + (raw_y - self._pos_suave_izq[1]) * self.suavizado_mano_izq
         self._pos_suave_izq = (sx, sy)
 
         cx, cy = self._centro_dinamico_izq
 
-        # 2. Vector desde el centro dinámico hacia la mano (compensando relación de aspecto)
+        # 2. Vector desde el centro dinámico hacia el puño (compensando relación de aspecto)
         dx = sx - cx
         dy = (sy - cy) * (alto / ancho)
         radio_actual = math.hypot(dx, dy)
@@ -199,20 +264,19 @@ class RastreadorManos:
 
             self._ultimo_angulo_izq = angulo_actual
         else:
-            # La mano está quieta o el centro dinámico ya la alcanzó
             self._estado.girando_activamente = False
             self._estado.velocidad_angular = 0.0
             self._ultimo_angulo_izq = None
 
-        # 3. Actualizar centro dinámico para que siga la deriva de la mano en el aire
+        # 3. Actualizar centro dinámico para que siga la deriva del puño en el aire
         cx += (sx - cx) * self.seguimiento_centro
         cy += (sy - cy) * self.seguimiento_centro
         self._centro_dinamico_izq = (cx, cy)
 
-        # Visualización de depuración para ver el eje flotante siguiendo la mano
+        # Visualización del eje flotante mientras el puño está cerrado
         cx_px, cy_px = int(cx * ancho), int(cy * alto)
         sx_px, sy_px = int(sx * ancho), int(sy * alto)
-        color_eje = (0, 255, 255) if self._estado.girando_activamente else (140, 140, 140)
+        color_eje = (0, 255, 255) if self._estado.girando_activamente else (160, 160, 160)
 
         cv2.circle(frame, (cx_px, cy_px), 6, color_eje, -1)
         cv2.circle(frame, (cx_px, cy_px), int(self.radio_minimo * ancho), color_eje, 1)
@@ -233,13 +297,16 @@ class RastreadorManos:
 
         # Textos informativos
         vueltas = estado.angulo_tiempo / 360.0
+        estado_puno_txt = "PUNO ACTIVO" if estado.puno_izquierdo_activo else "PAUSA (ABIERTA)"
+        color_tiempo = (0, 255, 0) if estado.puno_izquierdo_activo else (0, 255, 255)
+
         cv2.putText(
             frame,
-            f"Tiempo (Izq): {estado.angulo_tiempo:.1f} deg ({vueltas:.2f} vueltas)",
+            f"Tiempo (Izq - {estado_puno_txt}): {estado.angulo_tiempo:.1f} deg ({vueltas:.2f} v)",
             (10, h - 42),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.55,
-            (0, 255, 255),
+            0.52,
+            color_tiempo,
             2,
         )
         cv2.putText(
@@ -247,7 +314,7 @@ class RastreadorManos:
             f"Dedos (Der): {[int(d) for d in estado.dedos_levantados]}",
             (10, h - 15),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.55,
+            0.52,
             (0, 255, 0),
             2,
         )
@@ -318,14 +385,19 @@ class VisorImagen:
 # 4. CONSUMIDOR DE MÚSICA (Ejemplo corriendo en hilo paralelo)
 # =====================================================================
 def bucle_motor_musica(rastreador: RastreadorManos, evento_parada: threading.Event):
+    puno_anterior = False
+
     while not evento_parada.is_set():
         estado = rastreador.obtener_estado()
 
-        # Variables disponibles:
-        # - estado.pos_x, estado.pos_y     -> Posición en el plano [0.0, 1.0]
-        # - estado.dedos_levantados      -> Lista de 5 bools [Pulgar..Meñique]
-        # - estado.angulo_tiempo         -> Grados totales acumulados
-        # - estado.velocidad_angular     -> Velocidad y sentido del giro actual (+/-)
+        # Feedback sonoro inmediato al cerrar o abrir el puño izquierdo:
+        if estado.puno_izquierdo_activo and not puno_anterior:
+            # Disparar sonido corto de "agarre / inicio de control de tiempo"
+            pass
+        elif not estado.puno_izquierdo_activo and puno_anterior:
+            # Disparar sonido corto de "soltar / tiempo fijado"
+            pass
+        puno_anterior = estado.puno_izquierdo_activo
 
         time.sleep(0.02)
 
