@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paraná, mapa sonoro</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <div id="contenedor-mapa">
+    <canvas id="mapa" aria-label="Mapa del río Paraná. Mové el cuadrado con el mouse o las flechas para escuchar el río." role="img"></canvas>
+    <button id="portada" type="button">
+      <span class="portada-titulo">Tocá para escuchar el río</span>
+      <span class="portada-texto">Usá auriculares si podés. El paneo te dice hacia qué lado está el río.</span>
+    </button>
+  </div>
+
+  <aside>
+    <h1>Paraná</h1>
+    <p class="bajada">Deslizá el cuadrado por el mapa. Cuando toca el río suena fuerte, y a medida que te alejás baja el volumen. Si lo dejás quieto, la orquesta sostiene el acorde.</p>
+
+    <section class="cercania" aria-hidden="true">
+      <span class="etiqueta">Cercanía al río</span>
+      <span class="pista"><span id="barra-cercania" class="relleno"></span></span>
+      <span id="estado" class="estado">Quieto, la orquesta sostiene el acorde</span>
+    </section>
+
+    <section class="tramo">
+      <p id="tramo">Mové el cuadrado sobre el río</p>
+      <p id="detalle" class="detalle"></p>
+    </section>
+
+    <section id="capas" class="capas" aria-label="Instrumentos, uno por característica del río, y el triángulo"></section>
+
+    <p class="ayuda">Mouse o flechas para moverte, Shift para ir más rápido. Teclas 1 a 5 para prender y apagar cada instrumento.</p>
+    <p class="fuente">Datos SWOT de la NASA y el CNES, producto de ríos L2_HR_RiverSP versión D vía Hydrocron, julio de 2023 a noviembre de 2026.</p>
+    <p class="fuente">Instrumentos grabados de VSCO 2 Community Edition de Versilian Studios, licencia CC0.</p>
+  </aside>
+
+  <div id="anuncios" class="solo-lector" aria-live="polite"></div>
+
+  <script src="tramos.js"></script>
+  <script src="mapa.js"></script>
+  <script src="muestras/indice.js"></script>
+  <script src="sonido.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>

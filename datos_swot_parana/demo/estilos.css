@@ -1,0 +1,267 @@
+@font-face {
+  font-family: 'Archivo';
+  src: url('fuentes/archivo-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Archivo';
+  src: url('fuentes/archivo-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Archivo';
+  src: url('fuentes/archivo-latin-800-normal.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+
+:root {
+  --blanco: #ffffff;
+  --negro: #000000;
+  --gris: #6b6b6b;
+  --gris-claro: #ececec;
+  --ancho-panel: 380px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--blanco);
+  color: var(--negro);
+  font-family: 'Archivo', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: grid;
+  grid-template-columns: 1fr var(--ancho-panel);
+}
+
+#contenedor-mapa {
+  position: relative;
+  min-width: 0;
+  height: 100vh;
+}
+
+#mapa {
+  display: block;
+  cursor: none;
+  touch-action: none;
+}
+
+#portada {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+#portada[hidden] {
+  display: none;
+}
+
+.portada-titulo {
+  background: var(--negro);
+  color: var(--blanco);
+  font-weight: 800;
+  font-size: clamp(28px, 3.4vw, 46px);
+  letter-spacing: -0.03em;
+  padding: 18px 28px;
+}
+
+.portada-texto {
+  font-size: 17px;
+  color: var(--gris);
+}
+
+aside {
+  height: 100vh;
+  overflow-y: auto;
+  padding: 44px 36px 32px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+h1 {
+  margin: 0;
+  font-weight: 800;
+  font-size: 76px;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+p {
+  margin: 0;
+}
+
+.bajada {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.pista {
+  display: block;
+  height: 10px;
+  background: var(--gris-claro);
+}
+
+.relleno {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--negro);
+  transition: width 120ms linear;
+}
+
+.cercania {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.etiqueta {
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.cercania .pista {
+  height: 18px;
+}
+
+.estado {
+  font-size: 14px;
+  color: var(--gris);
+}
+
+.cercania .relleno {
+  transition: width 60ms linear;
+}
+
+#tramo {
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.detalle {
+  margin-top: 6px;
+  color: var(--gris);
+  font-size: 15px;
+}
+
+.capas {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.capa {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.capa .tecla {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--negro);
+  color: var(--blanco);
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.capa .texto {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.capa .titulo {
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.capa .instrumento {
+  font-size: 14px;
+  color: var(--gris);
+}
+
+.capa .valor {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.capa .pista {
+  margin-top: 5px;
+  height: 8px;
+}
+
+.capa[aria-pressed='false'] .tecla {
+  background: var(--gris-claro);
+  color: var(--gris);
+}
+
+.capa[aria-pressed='false'] .titulo,
+.capa[aria-pressed='false'] .valor {
+  color: var(--gris);
+}
+
+.capa[aria-pressed='false'] .relleno {
+  background: #bdbdbd;
+}
+
+.capa:focus-visible,
+#portada:focus-visible {
+  outline: 3px solid var(--negro);
+  outline-offset: 4px;
+}
+
+.ayuda {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.fuente {
+  margin-top: auto;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--gris);
+}
+
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -2,3 +2,5 @@ preprocesamiento/fuente/
 preprocesamiento/hojas/
 __pycache__/
 node_modules/
+
+datos_swot_parana/scripts/.cache_vsco/
