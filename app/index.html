@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Earth Jukebox</title>
+    <meta name="description" content="Escuchá los ríos del planeta a partir de las visualizaciones SWOT del Earth Information Center de la NASA." />
+    <link rel="stylesheet" href="estilos.css" />
+    <script type="module" src="src/main.js"></script>
+  </head>
+  <body data-pantalla="inicio" data-estado="inicio">
+    <main>
+      <section id="pantalla-inicio" class="pantalla pantalla-inicio" aria-labelledby="titulo-inicio">
+        <h1 id="titulo-inicio">Earth Jukebox</h1>
+        <p class="bajada">Escuchá cómo crecen y bajan cinco de los ríos más grandes del planeta</p>
+        <button id="boton-empezar" class="boton">Empezar</button>
+        <p class="nota">Apretá cualquier tecla o tocá la pantalla. El navegador te va a pedir permiso para usar el micrófono.</p>
+      </section>
+
+      <section id="pantalla-mapa" class="pantalla pantalla-mapa" aria-labelledby="titulo-mapa" hidden>
+        <header class="encabezado">
+          <h2 id="titulo-mapa">Elegí un río</h2>
+          <p>Decí su nombre o su número, o recorrelos con las flechas y apretá Enter</p>
+        </header>
+        <div id="mapa" class="mapa"></div>
+      </section>
+
+      <section id="pantalla-reproductor" class="pantalla pantalla-reproductor" aria-labelledby="nombre-rio" hidden>
+        <header class="encabezado">
+          <h2 id="nombre-rio"></h2>
+          <p id="region-rio"></p>
+        </header>
+        <div class="cuerpo-reproductor">
+          <div class="marco-video">
+            <video id="video" muted playsinline aria-hidden="true"></video>
+            <div class="progreso" aria-hidden="true"><div id="progreso"></div></div>
+          </div>
+          <div class="debajo-video">
+            <p id="descripcion-rio" class="descripcion"></p>
+            <div class="controles">
+              <button id="boton-pausa" class="boton boton-claro">Pausa</button>
+              <button id="boton-repetir" class="boton boton-claro">Repetir</button>
+              <button id="boton-describir" class="boton boton-claro">Describir</button>
+              <button id="boton-volver" class="boton boton-claro">Volver al mapa</button>
+            </div>
+            <p class="creditos">
+            Visualización <a href="https://svs.gsfc.nasa.gov/14990/">SWOT Mission Unlocks a New View of Our Waterways</a>
+              de NASA Scientific Visualization Studio, con datos de la misión SWOT de NASA y CNES
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="consola">
+      <button id="boton-hablar" class="boton boton-hablar" aria-pressed="false">
+        <span class="indicador" aria-hidden="true"></span>
+        <span>Hablar</span>
+        <kbd>espacio</kbd>
+      </button>
+      <div class="consola-textos">
+        <p id="subtitulo" class="subtitulo"></p>
+        <p class="consola-estado"><span id="estado-microfono">Micrófono cerrado</span><span id="lo-que-oyo"></span></p>
+      </div>
+      <p class="consola-ayuda"><span id="modo-voz">Voz de la app activada</span><span>H para la ayuda</span></p>
+    </footer>
+
+    <div id="anuncios" class="solo-lector" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+{
+  "fuente": {
+    "titulo": "SWOT Mission Unlocks a New View of Our Waterways",
+    "pagina": "https://svs.gsfc.nasa.gov/14990/",
+    "video": "https://svs.gsfc.nasa.gov/vis/a010000/a014900/a014990/20260305_SVS14990_SWOT_RIVERS_DATA_VIS_3840x2160_60fps_ENGLISH_FINALCUT_GAW.webm",
+    "meses": "Cada tramo recorre en bucle el año hidrológico de octubre de 2023 a septiembre de 2024, con la fecha abajo a la izquierda y la escala de volumen del río (de blanco, más bajo, a azul, más alto) abajo a la derecha."
+  },
+  "rios": [
+    {
+      "id": "mississippi",
+      "nombre": "Mississippi",
+      "region": "América del Norte",
+      "alias": [
+        "mississippi",
+        "misisipi",
+        "misisipí",
+        "missisipi",
+        "mississipi",
+        "misi",
+        "uno",
+        "1",
+        "primero"
+      ],
+      "coordenadas": {
+        "lat": 35.1,
+        "lon": -90.0
+      },
+      "inicio": 62.6,
+      "fin": 103.2,
+      "recorte": null,
+      "tono": 0,
+      "descripcion": "El Mississippi nace en Minnesota y desemboca en la costa de Luisiana, en Estados Unidos. Sostiene humedales y fauna a lo largo de todo su recorrido y es una vía clave para mover cosechas y energía. En la visualización, el agua va del blanco al azul profundo a medida que el río crece."
+    },
+    {
+      "id": "amazonas",
+      "nombre": "Amazonas",
+      "region": "América del Sur",
+      "alias": [
+        "amazonas",
+        "amazon",
+        "amazona",
+        "dos",
+        "2",
+        "segundo"
+      ],
+      "coordenadas": {
+        "lat": -3.3,
+        "lon": -60.0
+      },
+      "inicio": 108.0,
+      "fin": 152.5,
+      "recorte": null,
+      "tono": 3,
+      "descripcion": "El Amazonas fue el río que más cambió en todo el planeta durante el año medido, aun siendo un año de sequía. Ganó y perdió más de 45 billones de galones de agua. Cuando crece, el agua inunda la cuenca y renueva los nutrientes de la selva, que pasa de verde claro a verde intenso."
+    },
+    {
+      "id": "congo",
+      "nombre": "Congo",
+      "region": "África Central",
+      "alias": [
+        "congo",
+        "el congo",
+        "tres",
+        "3",
+        "tercero"
+      ],
+      "coordenadas": {
+        "lat": 0.1,
+        "lon": 18.3
+      },
+      "inicio": 158.5,
+      "fin": 175.3,
+      "recorte": null,
+      "tono": 5,
+      "descripcion": "El Congo es el río más profundo del mundo y uno de los que más agua transporta. Igual que el Amazonas, lleva el agua desde el corazón del continente hasta el océano y moldea los ecosistemas por los que pasa."
+    },
+    {
+      "id": "ganges",
+      "nombre": "Ganges",
+      "region": "Asia del Sur",
+      "alias": [
+        "ganges",
+        "ganga",
+        "gangues",
+        "cuatro",
+        "4",
+        "cuarto"
+      ],
+      "coordenadas": {
+        "lat": 25.3,
+        "lon": 83.0
+      },
+      "inicio": 181.5,
+      "fin": 214.3,
+      "recorte": null,
+      "tono": 7,
+      "descripcion": "El Ganges cambia muchísimo a lo largo del año. En invierno la nieve cubre el Himalaya, después el calor la derrite y alimenta al río, y el monzón suma todavía más agua. El río se desborda sobre las llanuras y el cambio baja desde las montañas hacia la desembocadura."
+    },
+    {
+      "id": "yangtse",
+      "nombre": "Yangtsé",
+      "region": "Asia Oriental",
+      "alias": [
+        "yangtsé",
+        "yangtse",
+        "yangtze",
+        "yang tse",
+        "yansé",
+        "yangsé",
+        "río azul",
+        "cinco",
+        "5",
+        "quinto"
+      ],
+      "coordenadas": {
+        "lat": 30.6,
+        "lon": 114.3
+      },
+      "inicio": 222.0,
+      "fin": 245.5,
+      "recorte": null,
+      "tono": 10,
+      "descripcion": "El Yangtsé recorre miles de kilómetros por China, desde la meseta del Tíbet hasta el mar de China Oriental. Cuando crece su caudal el paisaje se pone más verde, sobre todo en las tierras de cultivo. Abastece a algunas de las regiones más pobladas del planeta."
+    }
+  ]
+}
