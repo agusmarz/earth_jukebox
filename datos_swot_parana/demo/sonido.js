@@ -70,7 +70,10 @@
   let pasosDesdeEntrada = Infinity;
   let vozMelodia = null;
   let tramosParaTriangulo = 0;
+  let retomarAlFijar = false;
   const motivos = new Map();
+  // Todas las notas que están sonando o programadas, para poder cortarlas al cambiar de río
+  const vocesActivas = new Set();
   const muestras = {};
 
   const capas = {
@@ -146,7 +149,7 @@
     fuente.start(tiempo);
     fuente.stop(fin);
 
-    return {
+    const voz = {
       fin,
       apagar(momento, salida = 0.4) {
         if (momento >= fin) return;
@@ -156,6 +159,9 @@
         try { fuente.stop(Math.max(momento, tiempo) + salida * 1.5); } catch (error) { /* ya estaba detenida */ }
       },
     };
+    vocesActivas.add(voz);
+    fuente.onended = () => vocesActivas.delete(voz);
+    return voz;
   }
 
   // 3. Grafo de audio
@@ -604,6 +610,29 @@
       }
       actualizarCuerdas(ahora);
       if (quieto && cambio) empezarFermata(ahora);
+      if (retomarAlFijar && tramo) {
+        retomarAlFijar = false;
+        if (!quieto) retomarMusica(ahora);
+      }
+    },
+
+    // Al cambiar de río. Corta todo lo que suena y olvida el río anterior (tramo actual, tramos
+    // cruzados, motivos y cuenta del triángulo). Las capas prendidas y apagadas se mantienen.
+    reiniciar() {
+      tramoActual = null;
+      cruzados = [];
+      ultimoRegistrado = null;
+      pasosDesdeEntrada = Infinity;
+      tramosParaTriangulo = 0;
+      golpesArpa = 0;
+      vozMelodia = null;
+      motivos.clear();
+      if (!nodos) return;
+      const ahora = contexto.currentTime;
+      soltarFermata(ahora);
+      vocesActivas.forEach((voz) => voz.apagar(ahora, 0.3));
+      vocesActivas.clear();
+      retomarAlFijar = true;
     },
 
     // Anota un tramo que el cuadrado acaba de cruzar. Suena en la próxima semicorchea, junto con

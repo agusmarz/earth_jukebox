@@ -1,37 +1,104 @@
-# Datos SWOT del río Paraná
+# Datos SWOT de ríos de SWORD
 
-Niveles, anchos, superficies y pendientes del Paraná medidos por el satélite SWOT, bajados de la API [Hydrocron](https://podaac.github.io/hydrocron/) de PO.DAAC (NASA), con cinco mapas hechos a partir de ellos. Qué significa cada archivo y cada columna está en [GLOSARIO.md](GLOSARIO.md).
+Niveles, anchos, superficies y pendientes de ríos medidos por el satélite SWOT, bajados de la API [Hydrocron](https://podaac.github.io/hydrocron/) de PO.DAAC (NASA), con mapas y los datos de la demo del mapa sonoro. Cualquier río de SWORD se procesa con un solo comando a partir de un archivo de configuración. Hoy están el Paraná y el Mississippi. Qué significa cada archivo y cada columna está en [GLOSARIO.md](GLOSARIO.md).
+
+Se procesa solo el cauce principal, sin afluentes, y la geometría es siempre la de SWORD.
+
+## Cómo agregar un río nuevo
+
+1. **Buscá el tramo de la desembocadura** con `python buscar_desembocadura.py "<nombre en SWORD>"` desde `scripts/` (por ejemplo `"Mississippi River"`). Parte del tramo con ese nombre más cercano al mar, baja por el vecino de mayor `facc` hasta el último tramo e imprime la línea de `seleccion` lista para copiar. Conviene mirar en un mapa que el punto sea la boca del río.
+2. **Escribí `rios/<id>.json`.** Alcanza con esto:
+
+   ```json
+   {
+     "id": "mississippi",
+     "nombre": "Mississippi",
+     "seleccion": {"modo": "topologia", "desembocadura": "74300100016"},
+     "ciudades": [["Nueva Orleans", 29.95, -90.07], ["San Luis", 38.63, -90.2]],
+     "criterios": {"modo": "relativos"}
+   }
+   ```
+
+   El `id` tiene que coincidir con el nombre del archivo. `etiquetas_a_la_izquierda` y `ciudades_solo_mapas` son opcionales, y si no ponés `criterios` se usan los relativos. Ese es, recortado, el `rios/mississippi.json` real.
+3. **Corré `python procesar_rio.py <id>`** desde `scripts/`. Baja lo que haga falta, deja los datos en `datos/<id>/`, los mapas en `mapas/<id>/`, la demo en `demo/datos/<id>.json` y suma el río a `demo/datos/indice.json`.
+
+La primera vez que se procesa un río de un continente se baja una sola vez el GeoPackage de tramos de SWORD v17b de ese continente (de 130 a 330 MB comprimido, según el continente). Si alguno pesara más de 1 GB, el proceso para y avisa sin bajarlo.
 
 ## Estructura
 
 ```
+rios/
+  <id>.json               configuración de cada río
+  escalas_globales.json   rangos fijos de la normalización global, iguales para todos los ríos
 datos/
-  crudo/<reach_id>.json   respuesta original de Hydrocron por tramo (176 tramos)
-  crudo_huecos/           86 tramos de SWORD sin nombre que cierran los huecos del cauce (los usa solo la demo)
-  observaciones.csv       una fila por tramo y pasada
-  metricas.csv            una fila por tramo con las métricas de los mapas
-  tramos.geojson          geometría de los tramos con sus métricas
-demo/                     mapa sonoro para recorrer el río con el mouse (abrir demo/index.html)
-mapas/                    nivel_mediano, amplitud, ancho_mediano, superficie_mediana y pendiente, en .html y .png
+  <id>/crudo/<reach_id>.json   respuesta original de Hydrocron por tramo (caché)
+  <id>/seleccion.json          tramos del cauce, candidatos para cerrar huecos y tramos que solo están en SWORD
+  <id>/observaciones.csv       una fila por tramo y pasada
+  <id>/metricas.csv            una fila por tramo con las métricas de los mapas
+  <id>/tramos.geojson          geometría de los tramos con sus métricas
+  cache_sword/                 índice de SWORD Explorer y GeoPackages de SWORD v17b (fuera de git)
+  crudo_huecos/                copia histórica de los tramos que cierran los huecos del Paraná (ya están en datos/parana/crudo)
+mapas/<id>/               nivel_mediano, amplitud, ancho_mediano, superficie_mediana y pendiente, en .html y .png
+demo/                     mapa sonoro (abrir demo/index.html), lee demo/datos/<id>.json
 scripts/
-  mapas_rio.py            baja los datos de Hydrocron y hace los mapas (necesita internet)
-  exportar_datos.py       arma los .csv y el .geojson a partir de datos/crudo
-  generar_mapas.py        rehace los cinco mapas desde datos/, sin internet
-  preparar_demo.py        arma demo/tramos.js con datos/tramos.geojson y datos/crudo_huecos
+  procesar_rio.py         punto de entrada, procesar_rio.py <id> [--pasos bajar exportar mapas demo] [--actualizar]
+  exportar_datos.py       solo el paso exportar
+  generar_mapas.py        solo el paso mapas, con --variables y --sin-png
+  preparar_demo.py        solo el paso demo
+  mapas_rio.py            mapas de cualquier variable, incluidas las anomalías de un período (--desde, --hasta)
+  buscar_desembocadura.py tramo de desembocadura de un río, por nombre
+  probar_regresion.py     comprueba que el Paraná da lo mismo que antes de la reorganización
+  preparar_muestras.py    muestras orquestales de la demo
+  swot/                   paquete con la lógica, módulos hydrocron, sword, metricas, mapas, demo y pasos
 ```
 
-## Cómo regenerar
+## Cómo se procesa
 
 Necesita Python 3.9 o más y `pip install requests pandas numpy matplotlib folium`.
 
 ```bash
 cd scripts
-python exportar_datos.py
-python generar_mapas.py
+python procesar_rio.py parana                    # los cuatro pasos
+python procesar_rio.py parana --pasos demo       # solo la demo, sin red
+python procesar_rio.py parana --actualizar       # vuelve a bajar todo de Hydrocron con las pasadas nuevas
+python probar_regresion.py                       # verifica el Paraná contra el commit 9fe5bb5
 ```
 
-Para actualizar con pasadas nuevas hay que volver a consultar la API con `python mapas_rio.py --variables nivel_mediano amplitud ancho_mediano superficie_mediana pendiente`. Ese script guarda su caché en `scripts/cache_hydrocron` y deja los mapas en `scripts/mapas`. Para que el resto use los datos nuevos, copiá esas respuestas a `datos/crudo` con el nombre `<reach_id>.json`.
+**bajar.** Elige los tramos del cauce y los baja a `datos/<id>/crudo/<reach_id>.json`. La clave de la caché es solo el `reach_id`, sin la fecha de fin, así que lo que ya está no se vuelve a pedir salvo con `--actualizar`. La selección tiene dos modos.
+
+- `{"modo": "ids", "ids": [...], "ids_huecos": [...]}` usa exactamente esa lista. Es el modo del Paraná, con los 176 tramos que SWORD llama Parana y los 86 que cierran sus huecos.
+- `{"modo": "topologia", "desembocadura": <reach_id>}` sube desde la desembocadura por el vecino aguas arriba (`rch_id_up`) de mayor área de aporte (`facc`) hasta la naciente. Los afluentes quedan afuera. El índice de SWORD Explorer no trae topología, por eso se usa el GeoPackage oficial de v17b. El `facc` de SWORD tiene errores puntuales, como brazos que salen del río con el `facc` del río entero o rachas de tramos del cauce con `facc` casi cero. Para que un valor aislado no desvíe el camino, el `facc` de cada vecino se toma como el percentil 75 de los `facc` de los próximos 20 tramos de su cadena aguas arriba, y los empates se resuelven con `path_freq`. Los tramos que Hydrocron no tiene se dibujan con su geometría de SWORD y sus valores se interpolan.
+
+En los dos modos, si queda un hueco entre tramos consecutivos del cauce se cierra con el camino más corto (Dijkstra) de tramos reales de SWORD que se tocan. Los candidatos son los de `ids_huecos` o, si no se dan, los tramos de SWORD que caen cerca del hueco.
+
+**exportar.** Escribe `observaciones.csv`, `metricas.csv` y `tramos.geojson` con las pasadas buenas (`reach_q` 0 o 1 y nivel válido).
+
+**mapas.** Un `.html` interactivo y un `.png` por métrica.
+
+**demo.** Corrige los valores raros con la mediana de los vecinos, interpola los tramos sin datos a lo largo del cauce según `dist_km`, normaliza y escribe `demo/datos/<id>.json`. Los criterios para decidir qué es raro son de dos tipos.
+
+| | `absolutos` (Paraná) | `relativos` (por defecto) |
+| --- | --- | --- |
+| Ancho raro | fuera de `rangos.ancho` (el Paraná usa más de 300 m) | fuera de 0,3 a 3 veces `p_width` de SWORD |
+| Pendiente y amplitud raras | fuera de `rangos` (±30 cm/km, hasta 20 m) | z robusto (con la MAD) mayor a 3,5 respecto de los 10 vecinos más cercanos a lo largo del cauce. La MAD tiene un piso de 1 cm/km y 0,25 m, del orden del ruido de SWOT |
+| Vecinos para corregir | los 4 más cercanos en el mapa, a menos de 45 km | los 4 más cercanos a lo largo del cauce, a menos de 45 km |
+| Escala del nivel | logarítmica | lineal |
+
+Cada métrica se normaliza entre 0 y 1 de dos maneras, y la demo deja elegir con un botón. La `propia` usa los percentiles 5 y 95 de los valores medidos del río, en escala logarítmica para ancho y amplitud (y para nivel con criterios absolutos). La `global` usa los rangos fijos de `rios/escalas_globales.json`, así sumar un río no cambia cómo suenan los otros. Esos rangos (ancho de 100 m a 10 km, nivel de 1 a 2000 m, pendiente de 0 a 25 cm/km y amplitud de 0,5 a 15 m) son órdenes de magnitud de los ríos grandes elegidos a mano, no ajustados a ningún conjunto de datos, y el archivo explica de dónde sale cada uno.
+
+## Contrato de demo/datos
+
+```
+indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}, ...]}
+<id>.json    {"version": 1, "id", "nombre", "fuente", "unidades": {"ancho", "nivel", "pendiente", "amplitud"},
+              "ciudades": [[nombre, lat, lon]],
+              "tramos": [{"id", "tipo", "nombre", "de_hueco", "km", "pasadas", "valor",
+                          "normas": {"propia": {...}, "global": {...}}, "corregido", "medido", "interpolado",
+                          "linea": [[lon, lat]]}]}
+```
+
+Los campos de cada tramo significan lo mismo que en el `demo/tramos.js` original. `normas.propia` y `normas.global` tienen las mismas claves que el antiguo `norma`, con valores entre 0 y 1.
 
 ## Fuente
 
-Surface Water and Ocean Topography (SWOT), SWOT Level 2 River Single-Pass Vector Data Product, Version D, PO.DAAC, https://doi.org/10.5067/SWOT-RIVERSP-D, consultado vía Hydrocron el 14 de noviembre de 2026. Tramos definidos por SWORD v17b.
+Surface Water and Ocean Topography (SWOT), SWOT Level 2 River Single-Pass Vector Data Product, Version D, PO.DAAC, https://doi.org/10.5067/SWOT-RIVERSP-D, consultado vía Hydrocron el 14 de noviembre de 2026. Tramos y topología de SWORD v17b (Altenau y otros, https://doi.org/10.5281/zenodo.15299138).

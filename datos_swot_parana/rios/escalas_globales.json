@@ -1,0 +1,34 @@
+{
+  "descripcion": "Rangos fijos de la normalización global de la demo. Son los mismos para todos los ríos, así agregar un río no cambia cómo suenan los otros. Un valor en el mínimo vale 0, uno en el máximo vale 1 y lo que queda afuera se recorta. Con escala log se interpola en logaritmo entre mínimo y máximo.",
+  "origen": "Elegidos a mano como órdenes de magnitud de los ríos grandes que mide SWOT, no ajustados a ningún conjunto de datos. Cada métrica explica de dónde sale su rango. Se revisaron contra el Paraná y el Mississippi procesados con este repo.",
+  "metricas": {
+    "ancho": {
+      "escala": "log",
+      "minimo": 100,
+      "maximo": 10000,
+      "unidad": "m",
+      "origen": "SWOT está diseñado para ríos de más de 100 m de ancho (requisito científico de la misión) y SWORD llega a unos 30 m, así que 100 m es el piso de lo que se mide bien. 10 km cubre los cauces más anchos sin contar estuarios, como el Amazonas bajo o el Paraná en los embalses."
+    },
+    "nivel": {
+      "escala": "log",
+      "minimo": 1,
+      "maximo": 2000,
+      "unidad": "m",
+      "origen": "Nivel sobre el geoide. Los tramos bajos de los ríos grandes están entre 0 y 100 m (el Paraná en Rosario a unos 5 m, el Mississippi en Nueva Orleans cerca de 0) y las cabeceras de los cauces principales llegan a unos 1500 a 2000 m (el Missouri en Montana). Se usa log para que la llanura, donde está casi todo el río, no quede apretada contra el piso. Lo que está por debajo de 1 m vale 0."
+    },
+    "pendiente": {
+      "escala": "lineal",
+      "minimo": 0,
+      "maximo": 25,
+      "unidad": "cm/km",
+      "origen": "Los ríos grandes de llanura tienen pendientes de 1 a 10 cm/km (el Amazonas unos 2, el Paraná y el Mississippi bajo de 2 a 5) y los tramos de cabecera de algunas decenas. Las pendientes negativas, que son ruido de medición, se llevan a 0 antes de normalizar, igual que en la normalización propia."
+    },
+    "amplitud": {
+      "escala": "log",
+      "minimo": 0.5,
+      "maximo": 15,
+      "unidad": "m",
+      "origen": "Diferencia entre los percentiles 95 y 5 del nivel. En los ríos grandes la crecida anual va de 1 a 15 m (el Paraná de 2 a 6 m, el Mississippi hasta 10 m, el Amazonas en Manaos de 10 a 12 m). Por debajo de 0,5 m cuesta separarla del ruido de SWOT, del orden de 10 cm por pasada."
+    }
+  }
+}

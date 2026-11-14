@@ -1,51 +1,26 @@
-"""
-Regenera los cinco mapas del Paraná a partir de los datos guardados, sin consultar la API.
+"""Rehace los mapas de un río desde datos/<id>/, sin consultar la API.
 
-Lee datos/observaciones.csv y datos/tramos.geojson y escribe en mapas/ un .html y un .png por variable.
-
-Uso (desde la carpeta scripts)
-    python generar_mapas.py
-    python generar_mapas.py --variables amplitud pendiente
+Uso, desde esta carpeta
+    python generar_mapas.py <id>
+    python generar_mapas.py <id> --variables amplitud pendiente
 """
 import argparse
-import json
-from pathlib import Path
+import sys
 
-import pandas as pd
-
-import mapas_rio as mr
-
-RAIZ = Path(__file__).resolve().parent.parent
-VARIABLES_MAPAS = ["nivel_mediano", "amplitud", "ancho_mediano", "superficie_mediana", "pendiente"]
+from swot import cargar_rio
+from swot.metricas import VARIABLES_MAPAS
+from swot.pasos import hacer_mapas
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Mapas del Paraná desde los datos guardados")
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+    parser = argparse.ArgumentParser(description="Mapas de un río desde los datos guardados")
+    parser.add_argument("id", help="río de rios/<id>.json")
     parser.add_argument("--variables", nargs="+", default=VARIABLES_MAPAS, choices=VARIABLES_MAPAS)
     parser.add_argument("--sin-png", action="store_true")
     argumentos = parser.parse_args()
-
-    observaciones = pd.read_csv(RAIZ / "datos" / "observaciones.csv", dtype={"reach_id": str})
-    observaciones = mr.limpiar(observaciones.drop(columns=["tipo"]))
-    metricas = mr.calcular_metricas(observaciones)
-
-    tramos = json.loads((RAIZ / "datos" / "tramos.geojson").read_text())
-    geometrias = {f["properties"]["reach_id"]: f["geometry"]["coordinates"] for f in tramos["features"]}
-
-    inicio = observaciones["fecha"].min().strftime("%Y-%m-%d")
-    fin = observaciones["fecha"].max().strftime("%Y-%m-%d")
-    subtitulo = f"Río Paraná, SWOT {inicio} a {fin}, pasadas con reach_q 0 o 1"
-
-    salida = RAIZ / "mapas"
-    salida.mkdir(exist_ok=True)
-    for variable in argumentos.variables:
-        config = mr.VARIABLES[variable]
-        mr.mapa_interactivo(metricas, geometrias, variable, config, mr.CIUDADES_PARANA,
-                            salida / f"{variable}.html", subtitulo)
-        if not argumentos.sin_png:
-            mr.mapa_estatico(metricas, geometrias, variable, config, mr.CIUDADES_PARANA,
-                             salida / f"{variable}.png", subtitulo)
-        print(f"  {variable} listo")
+    hacer_mapas(cargar_rio(argumentos.id), argumentos.variables, con_png=not argumentos.sin_png)
 
 
 if __name__ == "__main__":

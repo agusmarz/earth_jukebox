@@ -1,6 +1,6 @@
-# Demo del mapa sonoro del Paraná
+# Demo del mapa sonoro de ríos
 
-Prototipo para "leer" el río con el mouse. Un cuadrado sigue al mouse sobre el mapa. Si toca el río suena fuerte, a medida que se aleja baja el volumen, y el paneo estéreo indica hacia qué lado quedó el río. Es la base para después reemplazar el mouse por la mano.
+Prototipo para "leer" un río con el mouse. Sirve para cualquier río que tenga sus datos en `datos/`, sin tocar código. Un cuadrado sigue al mouse sobre el mapa. Si toca el río suena fuerte, a medida que se aleja baja el volumen, y el paneo estéreo indica hacia qué lado quedó el río. Es la base para después reemplazar el mouse por la mano.
 
 ## Cómo abrirla
 
@@ -11,6 +11,46 @@ python -m http.server
 ```
 
 y entrá a http://localhost:8000 con Chrome o Edge. No necesita internet. La portada muestra el avance mientras se cargan los instrumentos, y el primer clic o tecla habilita el audio. Con auriculares se nota mucho mejor el paneo.
+
+La dirección acepta tres parámetros, y se pueden combinar.
+
+| Parámetro | Qué hace |
+| --- | --- |
+| `?rio=<id>` | Abre ese río. Sin el parámetro abre el primero del índice |
+| `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
+| `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
+
+Por ejemplo http://localhost:8000/?carpeta=pruebas&rio=sintetico&normalizacion=global. La dirección se actualiza sola al cambiar de río o de normalización, así se puede copiar y compartir.
+
+Si `datos/` todavía no tiene datos, la portada lo avisa. Mientras tanto se puede probar con `?carpeta=pruebas`.
+
+## Ríos y datos
+
+El selector de río, debajo del título, lista los ríos de `datos/indice.json`. Se maneja con el mouse o con el teclado (Tab hasta el selector y flechas), y al cambiar de río se anuncia para lectores de pantalla. Al cambiar, se corta lo que estaba sonando y la orquesta arranca de nuevo con el río nuevo. Las capas prendidas y apagadas y la normalización elegida se mantienen.
+
+Cada río es un archivo `datos/<id>.json` con este formato.
+
+```
+indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
+<id>.json    {"version": 1, "id", "nombre", "fuente", "unidades": {"ancho", "nivel", "pendiente", "amplitud"},
+              "ciudades": [[nombre, lat, lon]],
+              "tramos": [{"id", "tipo", "nombre", "de_hueco", "km", "pasadas", "valor",
+                          "normas": {"propia": {...}, "global": {...}},
+                          "corregido", "medido", "interpolado", "linea": [[lon, lat]]}]}
+```
+
+`valor` tiene los valores en sus unidades y `normas` los mismos valores llevados a 0 a 1 de las dos formas. `de_hueco`, `corregido`, `medido` e `interpolado` son opcionales. El título, la pestaña y la descripción del mapa salen de `nombre`, y las ciudades se dibujan con la etiqueta a la derecha, salvo que pise a otra ciudad que está al este, en cuyo caso va a la izquierda.
+
+## Normalización
+
+El botón N del panel (o la tecla N) alterna entre dos formas de llevar cada característica a 0 a 1, que es lo que maneja el sonido y el grosor del río en el mapa.
+
+| Modo | Cómo normaliza | Para qué sirve |
+| --- | --- | --- |
+| Propia | Percentiles 5 y 95 de los valores medidos en ese río | Cada río usa todo el rango sonoro, se escuchan bien sus diferencias internas |
+| Global | Rangos fijos iguales para todos los ríos | Se puede comparar un río con otro, uno más ancho suena más ancho |
+
+Cada tramo trae las dos y `demo.js` hace que `tramo.norma` apunte a la elegida, así `sonido.js` no sabe nada del modo. Al cambiar no se corta lo que está sonando, el cambio entra en la nota siguiente. Las barras del panel y el grosor del río se actualizan al instante.
 
 ## Qué suena
 
@@ -34,11 +74,11 @@ La distancia al río, además de bajar el volumen, apaga los agudos y suma sala,
 
 Si el cuadrado queda quieto más de 350 ms, la orquesta hace una fermata sobre el acorde que estaba sonando. Las cuerdas sostienen el acorde, la madera del nivel y el arpa tocan la nota del nivel, y el contrabajo y un corno la fundamental. Cada nota suena hasta que su grabación se apaga del todo y ahí se vuelve a disparar, en bucle. Al volver a moverlo vuelve la música. El tiempo de espera es `ESPERA_QUIETO_MS` en `demo.js`.
 
-Lo que está en gris en el mapa es interpolado y suena igual que lo medido. Son dos casos.
+Lo que está en gris en el mapa tiene valores interpolados y suena igual que lo medido. La geometría es siempre la de SWORD, nunca se inventa. En el Paraná son 65 tramos.
 
-Los 22 tramos sin pasadas buenas (casi todos en los embalses de Yacyretá e Itaipú) toman sus valores interpolando linealmente entre los tramos con datos de aguas arriba y aguas abajo, según la distancia a la desembocadura.
+En el Paraná, los huecos del cauce principal se cierran con tramos reales de SWORD que no se llaman Paraná (figuran como no_data) y cuyas respuestas de Hydrocron están en `datos/crudo_huecos`. Para cada hueco, `preparar_demo.py` busca el camino más corto de tramos que se tocan entre las dos puntas. Si no hay camino, el hueco queda abierto. Hoy son 8 huecos y se cierran todos, con 72 tramos que en su mayoría son de embalse. Los más grandes son los de Itaipú (188 km entre Foz do Iguaçu y Guaíra) y Porto Primavera (221 km aguas arriba). Los brazos del Delta (topología dudosa) no se unen.
 
-Los huecos de geometría entre tramos consecutivos del cauce principal se cierran con puentes rectos partidos en pedazos de unos 10 km, cuyos valores van cambiando linealmente de una punta a la otra. Son 8 huecos. Los más grandes (188 km entre Foz do Iguaçu y Guaíra, y 221 km aguas arriba, en Porto Primavera) corresponden a embalses donde SWORD no tiene tramos con el nombre Paraná. Ahí el río va casi derecho, pero igual es una aproximación. Los brazos del Delta (topología dudosa) no se unen.
+Los tramos sin pasadas buenas toman sus valores interpolando linealmente entre los tramos con datos de aguas arriba y aguas abajo, según la distancia a la desembocadura. Son 22 de los tramos llamados Paraná (casi todos en los embalses de Yacyretá e Itaipú) y 43 de los que cierran huecos.
 
 Un tramo sin ningún dato no suena, pero con la interpolación ya no queda ninguno.
 
@@ -46,22 +86,30 @@ Un tramo sin ningún dato no suena, pero con la interpolación ya no queda ningu
 
 ```
 index.html, estilos.css   interfaz
-tramos.js                 datos ya preparados (lo genera scripts/preparar_demo.py)
-mapa.js                   proyección, dibujo y campo de distancias al río
+datos/                    un .json por río más indice.json (lo genera el pipeline de scripts/)
+pruebas/                  datos de prueba, con el mismo formato (los genera pruebas/generar_pruebas.py)
+tramos.js                 formato viejo del Paraná, la demo ya no lo usa
+mapa.js                   proyección, dibujo y campo de distancias al río (Mapa.cargar arma todo para un río)
 sonido.js                 sampler y orquesta con Web Audio
-demo.js                   cuadrado, panel y teclado
+demo.js                   carga de ríos, selector, normalización, cuadrado, panel y teclado
 muestras/                 grabaciones de VSCO 2 CE e índice (lo genera scripts/preparar_muestras.py)
 fuentes/                  Archivo, copiada de app/fuentes
 ```
 
 ## Cómo regenerar los datos
 
+Los archivos de `datos/` los genera el pipeline de `scripts/`, uno por río. Hasta que ese pipeline escriba el formato nuevo, `scripts/preparar_demo.py` sigue generando `tramos.js` con el formato viejo, que la demo ya no lee.
+
+Los datos de prueba se rehacen con
+
 ```bash
-cd scripts
-python preparar_demo.py
+cd pruebas
+python generar_pruebas.py
 ```
 
-Lee `datos/tramos.geojson`, simplifica la geometría, interpola los tramos sin datos, cierra los huecos con puentes, normaliza cada métrica entre 0 y 1 (percentiles 5 y 95 de los valores medidos, en escala logarítmica para ancho, nivel y amplitud) y corrige 12 valores físicamente raros (anchos menores a 300 m en pleno cauce, pendientes de más de 30 cm/km al pie de Itaipú, una amplitud de 29 m) con la mediana de los vecinos. En el panel esos valores aparecen como suavizados, junto con lo que midió SWOT.
+`pruebas/parana.json` es el `tramos.js` de siempre pasado al formato nuevo, con `normas.propia` igual a la normalización original. Su `normas.global` sale de unos rangos inventados (`ESCALAS_PRUEBA` en el script), pensados solo para que el cambio se escuche. `pruebas/sintetico.json` es un río inventado, con un embalse interpolado, un tramo que cierra un hueco, un valor suavizado y un tramo sin datos, para probar el cambio de río y los campos opcionales.
+
+Para el Paraná, `preparar_demo.py` lee `datos/tramos.geojson` y `datos/crudo_huecos`, cierra los huecos del cauce con tramos de SWORD, simplifica la geometría, corrige 15 valores físicamente raros (anchos menores a 300 m en pleno cauce, pendientes de más de 30 cm/km al pie de las represas, amplitudes de más de 20 m) con la mediana de los vecinos, interpola los tramos sin datos y normaliza cada métrica entre 0 y 1 (percentiles 5 y 95 de los valores medidos, en escala logarítmica para ancho, nivel y amplitud). En el panel los valores corregidos aparecen como suavizados, junto con lo que midió SWOT.
 
 ## Cómo funciona el sampler
 

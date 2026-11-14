@@ -1,0 +1,23 @@
+{
+  "id": "mississippi",
+  "nombre": "Mississippi",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "74300100016"
+  },
+  "ciudades": [
+    ["Nueva Orleans", 29.95, -90.07],
+    ["Baton Rouge", 30.45, -91.19],
+    ["Vicksburg", 32.35, -90.88],
+    ["Memphis", 35.15, -90.05],
+    ["San Luis", 38.63, -90.2],
+    ["Kansas City", 39.1, -94.58],
+    ["Omaha", 41.26, -95.94],
+    ["Bismarck", 46.81, -100.78],
+    ["Great Falls", 47.5, -111.3]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}
