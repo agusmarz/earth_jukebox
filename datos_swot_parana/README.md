@@ -1,8 +1,32 @@
 # Datos SWOT de ríos de SWORD
 
-Niveles, anchos, superficies y pendientes de ríos medidos por el satélite SWOT, bajados de la API [Hydrocron](https://podaac.github.io/hydrocron/) de PO.DAAC (NASA), con mapas y los datos de la demo del mapa sonoro. Cualquier río de SWORD se procesa con un solo comando a partir de un archivo de configuración. Hoy están el Paraná y el Mississippi. Qué significa cada archivo y cada columna está en [GLOSARIO.md](GLOSARIO.md).
+Niveles, anchos, superficies y pendientes de ríos medidos por el satélite SWOT, bajados de la API [Hydrocron](https://podaac.github.io/hydrocron/) de PO.DAAC (NASA), con mapas y los datos de la demo del mapa sonoro. Cualquier río de SWORD se procesa con un solo comando a partir de un archivo de configuración. Hoy hay diez ríos, elegidos con el criterio que se explica en [Qué ríos hay y por qué](#qué-ríos-hay-y-por-qué). Qué significa cada archivo y cada columna está en [GLOSARIO.md](GLOSARIO.md).
 
 Se procesa solo el cauce principal, sin afluentes, y la geometría es siempre la de SWORD.
+
+## Qué ríos hay y por qué
+
+Son, aproximadamente, los diez ríos de mayor caudal medio del mundo. Se cuentan los ríos que desembocan en el mar y se dejan afuera los afluentes, como el Madeira o el Negro, que tienen más caudal que varios de esta lista pero desembocan en el Amazonas.
+
+| Río | Caudal medio aproximado (m³/s) | Tramos descargados |
+| --- | ---: | ---: |
+| Amazonas | 209.000 | 424 |
+| Congo | 41.000 | 216 |
+| Ganges | 38.000 (junto con el Brahmaputra) | 277 |
+| Orinoco | 33.000 | 161 |
+| Yangtsé | 30.000 | 226 |
+| Yenisei | 19.600 | 69 |
+| Paraná | 17.000 a 18.000 | 262 |
+| Lena | 17.000 | 426 |
+| Mississippi | 16.800 | 489 |
+| Mekong | 16.000 | 213 |
+
+Los caudales son órdenes de magnitud y sirven solo para ordenar la lista. Cambian según la fuente y el período medido, y del Yenisei para abajo las diferencias son tan chicas que el orden entre esos ríos depende de la fuente que se use. Hay dos salvedades.
+
+- **Ganges.** Los 38.000 m³/s son del sistema Ganges-Brahmaputra, que desemboca en un delta común. Si se contara el Brahmaputra como río aparte (unos 20.000 m³/s), entraría en la lista antes que el Paraná. Acá se toma el sistema como uno solo y se procesa el cauce del Ganges.
+- **Los que siguen.** Los siguientes en la lista son el Irrawaddy y el Ob, con unos 13.000 m³/s cada uno. Se agregan como cualquier otro río, siguiendo [Cómo agregar un río nuevo](#cómo-agregar-un-río-nuevo).
+
+La cantidad de tramos depende del largo del cauce en SWORD y de cuántos tramos tiene Hydrocron, no del caudal.
 
 ## Cómo agregar un río nuevo
 
