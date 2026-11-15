@@ -64,6 +64,7 @@ datos/
   crudo_huecos/                copia histórica de los tramos que cierran los huecos del Paraná (ya están en datos/parana/crudo)
 mapas/<id>/               nivel_mediano, amplitud, ancho_mediano, superficie_mediana y pendiente, en .html y .png
 demo/                     mapa sonoro (abrir demo/index.html), lee demo/datos/<id>.json
+demo/datos/estaciones/    <id>.json, los datos de la demo por estación del año (paso estaciones)
 scripts/
   procesar_rio.py         punto de entrada, procesar_rio.py <id> [--pasos bajar exportar mapas demo] [--actualizar]
   exportar_datos.py       solo el paso exportar
@@ -84,6 +85,7 @@ Necesita Python 3.9 o más y `pip install requests pandas numpy matplotlib foliu
 cd scripts
 python procesar_rio.py parana                    # los cuatro pasos
 python procesar_rio.py parana --pasos demo       # solo la demo, sin red
+python procesar_rio.py mississippi --pasos estaciones  # la demo por estación del año, sin red
 python procesar_rio.py parana --actualizar       # vuelve a bajar todo de Hydrocron con las pasadas nuevas
 python probar_regresion.py                       # verifica el Paraná contra el commit 9fe5bb5
 ```
@@ -110,6 +112,8 @@ En los dos modos, si queda un hueco entre tramos consecutivos del cauce se cierr
 
 Cada métrica se normaliza entre 0 y 1 de dos maneras, y la demo deja elegir con un botón. La `propia` usa los percentiles 5 y 95 de los valores medidos del río, en escala logarítmica para ancho y amplitud (y para nivel con criterios absolutos). La `global` usa los rangos fijos de `rios/escalas_globales.json`, así sumar un río no cambia cómo suenan los otros. Esos rangos (ancho de 100 m a 10 km, nivel de 1 a 2000 m, pendiente de 0 a 25 cm/km y amplitud de 0,5 a 15 m) son órdenes de magnitud de los ríos grandes elegidos a mano, no ajustados a ningún conjunto de datos, y el archivo explica de dónde sale cada uno.
 
+**estaciones.** No corre por defecto, se pide con `--pasos estaciones`. Para cada estación toma solo las pasadas buenas de sus tres meses, de todos los años medidos (verano de junio a agosto, otoño de septiembre a noviembre, invierno de diciembre a febrero y primavera de marzo a mayo en el hemisferio norte, corridos seis meses si `rios/<id>.json` dice `"hemisferio": "sur"`, que por defecto es `"norte"`). Con esas pasadas calcula las mismas cuatro métricas y las pasa por lo mismo que el paso demo. La normalización propia no se recalcula por estación, se usa la del año entero, así las cuatro comparten la escala y suenan distinto. Escribe `demo/datos/estaciones/<id>.json` e imprime, por estación, las pasadas por tramo, cuántos tramos tienen datos, la mediana de cada métrica y cuánto se mueve la norma de cada tramo respecto del año.
+
 ## Contrato de demo/datos
 
 ```
@@ -119,7 +123,12 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}, ...]}
               "tramos": [{"id", "tipo", "nombre", "de_hueco", "km", "pasadas", "valor",
                           "normas": {"propia": {...}, "global": {...}}, "corregido", "medido", "interpolado",
                           "linea": [[lon, lat]]}]}
+estaciones/<id>.json  {"version": 1, "id", "hemisferio",
+              "estaciones": {"verano" | "otono" | "invierno" | "primavera": {"meses": [m1, m2, m3],
+                "tramos": {"<id del tramo>": {"pasadas", "valor", "normas", "corregido", "medido", "interpolado"}}}}}
 ```
+
+El archivo de estaciones trae solo lo que cambia con la estación. La geometría y las ciudades están en `<id>.json` y los tramos se emparejan por id.
 
 Los campos de cada tramo significan lo mismo que en el `demo/tramos.js` original. `normas.propia` y `normas.global` tienen las mismas claves que el antiguo `norma`, con valores entre 0 y 1.
 

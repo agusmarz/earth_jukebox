@@ -113,11 +113,11 @@ def largo_km(tramo, coseno):
 
 # Cierre de huecos
 
-def tramos_candidatos(observaciones, geometrias, solo_sword=None):
+def tramos_candidatos(observaciones, geometrias, solo_sword=None, meses=None):
     """Arma los candidatos a cerrar huecos con las mismas métricas que los tramos del cauce."""
     if observaciones.empty and not solo_sword:
         return []
-    metricas = calcular_metricas(observaciones) if not observaciones.empty else pd.DataFrame(
+    metricas = calcular_metricas(observaciones, meses=meses) if not observaciones.empty else pd.DataFrame(
         columns=COLUMNAS_METRICAS).rename_axis("reach_id")
     metricas = sumar_tramos_solo_sword(metricas, solo_sword or {})[COLUMNAS_METRICAS].round(4)
     geometrias = dict(geometrias)
@@ -315,8 +315,12 @@ def normalizador_global(escala_global, solo_positivas):
 
 # Programa
 
-def preparar(rio, tramos, candidatos):
-    """Arma el diccionario de la demo con el contrato de demo/datos/<id>.json y un resumen de lo hecho."""
+def preparar(rio, tramos, candidatos, normalizadores=None):
+    """Arma el diccionario de la demo con el contrato de demo/datos/<id>.json y un resumen de lo hecho.
+
+    normalizadores es {métrica: función} para la normalización propia. Sin él se calcula con los valores de
+    estos mismos tramos. Las estaciones pasan los del año entero, así las cuatro comparten la escala y se
+    escucha la diferencia entre una y otra. Los que se usaron vuelven en resumen["normalizadores"]."""
     criterios = rio["criterios"]
     escalas = dict(ESCALAS[criterios["modo"]], **criterios.get("escalas", {}))
     escalas_globales = cargar_escalas_globales()["metricas"]
@@ -338,6 +342,7 @@ def preparar(rio, tramos, candidatos):
         distancias = np.abs(km[:, None] - km[None, :])  # a lo largo del cauce
 
     columnas = {}
+    propios = {}
     for nombre, config in METRICAS.items():
         crudos = np.array([np.nan if t["properties"][config["campo"]] is None else t["properties"][config["campo"]]
                            for t in tramos], dtype=float)
@@ -348,7 +353,11 @@ def preparar(rio, tramos, candidatos):
         completos, interpolados = interpolar_faltantes(corregidos, km)
         # 4. Normalizaciones propia y global
         solo_positivas = nombre in SOLO_POSITIVAS
-        propia = normalizador_propio(corregidos, escalas[nombre], solo_positivas)
+        if normalizadores is None:
+            propia = normalizador_propio(corregidos, escalas[nombre], solo_positivas)
+        else:
+            propia = normalizadores[nombre]
+        propios[nombre] = propia
         global_ = normalizador_global(escalas_globales[nombre], solo_positivas)
         columnas[nombre] = {"crudos": crudos, "completos": completos, "marcados": marcados,
                             "interpolados": interpolados, "propia": propia(completos), "global": global_(completos)}
@@ -394,6 +403,7 @@ def preparar(rio, tramos, candidatos):
         "corregidos": {n: int(c["marcados"].sum()) for n, c in columnas.items()},
         "interpolados": {n: int(c["interpolados"].sum()) for n, c in columnas.items()},
         "sin_valor": {n: int(np.isnan(c["completos"]).sum()) for n, c in columnas.items()},
+        "normalizadores": propios,
     }
     return datos, resumen
 

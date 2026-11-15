@@ -245,7 +245,8 @@ p {
   gap: 8px;
 }
 
-#selector-rio {
+#selector-rio,
+#selector-estacion {
   appearance: none;
   border: 0;
   border-radius: 0;
@@ -260,13 +261,15 @@ p {
   cursor: pointer;
 }
 
-#selector-rio:disabled {
+#selector-rio:disabled,
+#selector-estacion:disabled {
   cursor: default;
   color: var(--gris);
 }
 
 .capa:focus-visible,
 #selector-rio:focus-visible,
+#selector-estacion:focus-visible,
 #portada:focus-visible {
   outline: 3px solid var(--negro);
   outline-offset: 4px;

@@ -12,13 +12,17 @@
   // Estado del río cargado. Se reemplaza entero al final de cargar, así nunca queda a medias.
   let rio = null;
 
-  // Apunta tramo.norma a la normalización elegida, que es lo que leen el dibujo y el sonido
+  // Apunta tramo.norma a la normalización elegida, que es lo que leen el dibujo y el sonido.
+  // También se llama después de cambiar los valores de los tramos (por ejemplo al elegir una
+  // estación), por eso vuelve a calcular cuáles son estimados.
   function fijarNormalizacion(modo) {
     if (!rio) return;
     for (const tramo of rio.tramos) {
       const normas = tramo.normas || {};
       tramo.norma = normas[modo] || normas.propia || {};
       tramo.tieneDatos = Object.values(tramo.norma).some((valor) => valor !== null && valor !== undefined);
+      // Estimado si alguno de sus valores salió de interpolar. La geometría siempre es la de SWORD.
+      tramo.estimado = Object.keys(tramo.interpolado || {}).length > 0;
     }
   }
 
@@ -39,8 +43,6 @@
 
     for (const tramo of tramos) {
       tramo.puntos = tramo.linea.map(([longitud, latitud]) => proyectar(longitud, latitud));
-      // Estimado si alguno de sus valores salió de interpolar. La geometría siempre es la de SWORD.
-      tramo.estimado = Object.keys(tramo.interpolado || {}).length > 0;
     }
     const ciudades = (datos.ciudades || []).map(([nombre, latitud, longitud]) => ({ nombre, punto: proyectar(longitud, latitud) }));
 

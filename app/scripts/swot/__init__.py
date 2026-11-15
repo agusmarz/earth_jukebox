@@ -6,6 +6,7 @@ Módulos
     metricas    limpieza de las respuestas y métricas por tramo
     mapas       mapas interactivos (folium) y estáticos (matplotlib)
     demo        cierre de huecos, corrección, interpolación y normalización para la demo
+    estaciones  los datos de la demo para cada estación del año
 
 Este archivo sabe dónde está cada cosa y cómo se lee la configuración de un río (rios/<id>.json).
 """
@@ -46,6 +47,7 @@ def cargar_rio(id_rio):
     rio.setdefault("ciudades_solo_mapas", [])
     rio.setdefault("etiquetas_a_la_izquierda", [])
     rio.setdefault("criterios", {"modo": "relativos"})
+    rio.setdefault("hemisferio", "norte")
     if isinstance(rio["criterios"], str):
         rio["criterios"] = {"modo": rio["criterios"]}
     modo_seleccion = rio.get("seleccion", {}).get("modo")
@@ -53,6 +55,8 @@ def cargar_rio(id_rio):
         raise SystemExit(f"{archivo.name}: seleccion.modo tiene que ser 'ids' o 'topologia'")
     if rio["criterios"].get("modo") not in ("absolutos", "relativos"):
         raise SystemExit(f"{archivo.name}: criterios.modo tiene que ser 'absolutos' o 'relativos'")
+    if rio["hemisferio"] not in ("norte", "sur"):
+        raise SystemExit(f"{archivo.name}: hemisferio tiene que ser 'norte' o 'sur'")
     return rio
 
 

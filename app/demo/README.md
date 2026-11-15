@@ -12,13 +12,14 @@ python -m http.server
 
 y entrá a http://localhost:8000 con Chrome o Edge. No necesita internet. La portada muestra el avance mientras se cargan los instrumentos, y el primer clic o tecla habilita el audio. Con auriculares se nota mucho mejor el paneo.
 
-La dirección acepta tres parámetros, y se pueden combinar.
+La dirección acepta estos parámetros, y se pueden combinar.
 
 | Parámetro | Qué hace |
 | --- | --- |
 | `?rio=<id>` | Abre ese río. Sin el parámetro abre el primero del índice |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
 | `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
+| `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca con todo el año |
 | `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
 
 Por ejemplo http://localhost:8000/?carpeta=pruebas&rio=sintetico&normalizacion=global. La dirección se actualiza sola al cambiar de río o de normalización, así se puede copiar y compartir.
@@ -41,6 +42,12 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
 ```
 
 `valor` tiene los valores en sus unidades y `normas` los mismos valores llevados a 0 a 1 de las dos formas. `de_hueco`, `corregido`, `medido` e `interpolado` son opcionales. El título, la pestaña y la descripción del mapa salen de `nombre`, y las ciudades se dibujan con la etiqueta a la derecha, salvo que pise a otra ciudad que está al este, en cuyo caso va a la izquierda.
+
+## Estaciones del año
+
+El selector de estación, debajo del de río, cambia los valores de cada tramo por los de esa estación: ancho, nivel, pendiente y amplitud calculados solo con las pasadas de sus tres meses, de todos los años medidos. "Todo el año" vuelve a los valores de siempre. Se usa la misma normalización propia del año entero en las cuatro estaciones, así se comparan entre sí. Como con la normalización, lo que está sonando no se corta y el cambio entra en la nota siguiente, y el grosor del río y el panel se actualizan al instante. Los tramos que en esa estación no tienen pasadas buenas se dibujan en gris y suenan con valores interpolados.
+
+Las estaciones se leen de `datos/estaciones/<id>.json`, que genera `scripts/procesar_rio.py <id> --pasos estaciones`. Si un río no tiene ese archivo, el selector queda deshabilitado en "Todo el año". Hoy solo lo tiene el Mississippi. El cambio es sutil, sobre todo en la amplitud, porque el nivel sobre el mar y el ancho cambian poco de una estación a otra frente a lo que cambian a lo largo del río.
 
 ## Normalización
 
@@ -115,7 +122,7 @@ pruebas/                  datos de prueba, con el mismo formato (los genera prue
 tramos.js                 formato viejo del Paraná, la demo ya no lo usa
 mapa.js                   proyección, dibujo y campo de distancias al río (Mapa.cargar arma todo para un río)
 sonido.js                 sampler y orquesta con Web Audio
-demo.js                   carga de ríos, selector, normalización, cuadrado, panel y teclado
+demo.js                   carga de ríos, selectores de río y estación, normalización, cuadrado, panel y teclado
 muestras/                 grabaciones de VSCO 2 CE e índice (lo genera scripts/preparar_muestras.py)
 fuentes/                  Archivo, copiada de app_video/fuentes
 ```

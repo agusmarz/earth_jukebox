@@ -1,20 +1,25 @@
-"""Los cuatro pasos de procesar_rio.py: bajar, exportar, mapas y demo.
+"""Los pasos de procesar_rio.py: bajar, exportar, mapas, demo y estaciones.
 
 bajar     elige los tramos del cauce (por ids o por topología), los baja de Hydrocron y busca candidatos
           para cerrar huecos. Deja la elección en datos/<id>/seleccion.json.
 exportar  arma datos/<id>/observaciones.csv, metricas.csv y tramos.geojson.
 mapas     hace los mapas de mapas/<id>/.
 demo      escribe demo/datos/<id>.json y actualiza demo/datos/indice.json.
+estaciones escribe demo/datos/estaciones/<id>.json, los mismos datos de la demo para cada estación del año.
+          No corre por defecto, se pide con --pasos estaciones.
 """
 import json
 
 from . import carpeta_datos, escribir_texto, hydrocron, sword
 from . import demo as demo_rio
+from . import estaciones as estaciones_rio
 from . import mapas as mapas_rio
-from .metricas import (VARIABLES_MAPAS, calcular_metricas, exportar, leer_observaciones, leer_tramos_geojson,
-                       sumar_tramos_solo_sword)
+from .metricas import (COLUMNAS_METRICAS, VARIABLES_MAPAS, calcular_metricas, entidades_geojson, exportar,
+                       leer_observaciones, leer_tramos_geojson, sumar_tramos_solo_sword)
 
-PASOS = ["bajar", "exportar", "mapas", "demo"]
+PASOS = ["bajar", "exportar", "mapas", "demo", "estaciones"]
+# Por ahora estaciones se pide a mano con --pasos estaciones, mientras se prueba con un río
+PASOS_POR_DEFECTO = ["bajar", "exportar", "mapas", "demo"]
 
 
 def archivo_seleccion(id_rio):
@@ -126,6 +131,43 @@ def preparar_demo(rio, escribir=True):
     return datos, resumen
 
 
+# Paso estaciones
+
+def tramos_de_estacion(seleccion, observaciones, geometrias, meses):
+    """Los mismos tramos del cauce que tramos.geojson, con las métricas de las pasadas de esos meses."""
+    metricas = calcular_metricas(observaciones, meses=meses)
+    metricas = sumar_tramos_solo_sword(metricas, fichas_solo_sword(seleccion, seleccion["ids_cauce"]))
+    return entidades_geojson(metricas[COLUMNAS_METRICAS].round(4), geometrias)
+
+
+def preparar_estaciones(rio, escribir=True):
+    seleccion = leer_seleccion(rio["id"])
+    tramos_anuales = leer_tramos_geojson(rio["id"])
+    geometrias = {f["properties"]["reach_id"]: f["geometry"]["coordinates"] for f in tramos_anuales}
+    observaciones = leer_observaciones(rio["id"])
+    obs_huecos, geo_huecos = hydrocron.leer_tramos(rio["id"], seleccion["ids_huecos"])
+    solo_sword_huecos = fichas_solo_sword(seleccion, seleccion["ids_huecos"])
+
+    # El año entero da la normalización propia que comparten las cuatro estaciones
+    candidatos = demo_rio.tramos_candidatos(obs_huecos, geo_huecos, solo_sword_huecos)
+    anual, resumen_anual = demo_rio.preparar(rio, tramos_anuales, candidatos)
+    ids_anuales = [t["id"] for t in anual["tramos"]]
+
+    por_estacion = {}
+    for estacion, meses in estaciones_rio.meses_por_estacion(rio["hemisferio"]).items():
+        tramos = tramos_de_estacion(seleccion, observaciones, geometrias, meses)
+        candidatos = demo_rio.tramos_candidatos(obs_huecos, geo_huecos, solo_sword_huecos, meses=meses)
+        datos, resumen = demo_rio.preparar(rio, tramos, candidatos, resumen_anual["normalizadores"])
+        por_estacion[estacion] = (meses, datos, resumen)
+
+    salida = estaciones_rio.armar(rio, por_estacion, ids_anuales)
+    estaciones_rio.imprimir_resumen(por_estacion, anual)
+    if escribir:
+        archivo = estaciones_rio.escribir(salida)
+        print(f"{archivo} ({archivo.stat().st_size / 1024:.0f} KB)")
+    return salida, por_estacion
+
+
 def correr(rio, pasos, actualizar=False):
     for paso in PASOS:
         if paso not in pasos:
@@ -139,3 +181,5 @@ def correr(rio, pasos, actualizar=False):
             hacer_mapas(rio)
         elif paso == "demo":
             preparar_demo(rio)
+        elif paso == "estaciones":
+            preparar_estaciones(rio)

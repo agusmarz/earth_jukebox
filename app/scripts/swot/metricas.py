@@ -42,8 +42,12 @@ def limpiar(tabla):
 
 # 2. Métricas por tramo
 
-def calcular_metricas(observaciones, desde=None, hasta=None):
+def calcular_metricas(observaciones, desde=None, hasta=None, meses=None):
+    """Métricas por tramo. Con meses (lista de 1 a 12) solo cuenta las pasadas de esos meses, de todos los años.
+    Los tramos sin pasadas en esos meses quedan igual en la tabla, con las métricas vacías."""
     con_dato = observaciones.dropna(subset=["fecha"])
+    if meses is not None:
+        con_dato = con_dato[con_dato["fecha"].dt.month.isin(meses)]
     buenas = con_dato[(con_dato["reach_q"] <= 1) & con_dato["wse"].notna()].copy()
     grupos = buenas.groupby("reach_id")
 

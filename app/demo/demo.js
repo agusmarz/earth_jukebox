@@ -2,7 +2,8 @@
 // Si el cuadrado toca el río suena fuerte, si se aleja baja el volumen, y el paneo indica
 // hacia qué lado quedó el río.
 // Los ríos se leen de CARPETA_DATOS/indice.json y CARPETA_DATOS/<id>.json. La dirección acepta
-// ?rio=<id>, ?normalizacion=global, ?musica=dos_octavas y ?carpeta=pruebas (para usar los datos de demo/pruebas).
+// ?rio=<id>, ?normalizacion=global, ?musica=dos_octavas, ?estacion=invierno y ?carpeta=pruebas (para usar los
+// datos de demo/pruebas). Las estaciones, si el río las tiene, están en CARPETA_DATOS/estaciones/<id>.json.
 
 (function () {
   const CARPETA_DATOS = 'datos';
@@ -18,6 +19,17 @@
     dos_octavas: { titulo: 'Dos octavas', detalle: 'Nivel y pendiente recorren dos octavas, de re a re y de la a la' },
     relieve: { titulo: 'Relieve', detalle: 'La melodía sigue el ancho, que cambia de tramo a tramo, y el nivel pasa a las cuerdas' },
   };
+  // Estaciones de estaciones/<id>.json, en el orden del selector
+  const ESTACIONES = {
+    verano: 'Verano',
+    otono: 'Otoño',
+    invierno: 'Invierno',
+    primavera: 'Primavera',
+  };
+  const NOMBRES_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+    'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  // Lo que cambia de un tramo al pasar de una estación a otra. El resto (geometría, km, tipo) es igual.
+  const CAMPOS_ESTACION = ['pasadas', 'valor', 'normas', 'corregido', 'medido', 'interpolado'];
   const LADO_CUADRADO = 34;
   // El volumen cae en forma logarítmica con la distancia, como un sonido real que se aleja.
   // Fuera del cuadrado, cada vez que se duplica (distancia + REFERENCIA_PX) el volumen baja
@@ -49,6 +61,7 @@
   const elementos = {
     titulo: document.getElementById('titulo-rio'),
     selector: document.getElementById('selector-rio'),
+    selectorEstacion: document.getElementById('selector-estacion'),
     botonNormalizacion: document.getElementById('boton-normalizacion'),
     modoNormalizacion: document.getElementById('modo-normalizacion'),
     detalleNormalizacion: document.getElementById('detalle-normalizacion'),
@@ -84,6 +97,9 @@
   let rioActual = null;
   let rios = [];
   let pedidoRio = 0;
+  // Estación elegida ('' es todo el año) y estaciones del río cargado (null si no tiene)
+  let estacionActual = ESTACIONES[parametros.get('estacion')] ? parametros.get('estacion') : '';
+  let estacionesRio = null;
 
   function moverCursor(x, y) {
     if (Math.abs(x - cursor.x) < 0.5 && Math.abs(y - cursor.y) < 0.5) return;
@@ -183,7 +199,8 @@
     } else if (tramo.pasadas === 0) {
       elementos.detalle.textContent = `${encabezado}, sin pasadas buenas, valores interpolados entre los tramos vecinos`;
     } else {
-      elementos.detalle.textContent = `${encabezado}, ${tramo.pasadas} pasadas buenas`;
+      const periodo = estacionActual ? ` en ${ESTACIONES[estacionActual].toLowerCase()}` : '';
+      elementos.detalle.textContent = `${encabezado}, ${tramo.pasadas} pasadas buenas${periodo}`;
     }
     for (const capa of CAPAS) {
       const fila = filasCapas[capa.nombre];
@@ -368,6 +385,8 @@
     else nueva.delete('normalizacion');
     if (modoMusica !== 'original') nueva.set('musica', modoMusica);
     else nueva.delete('musica');
+    if (estacionActual) nueva.set('estacion', estacionActual);
+    else nueva.delete('estacion');
     history.replaceState(null, '', `${location.pathname}?${nueva}`);
   }
 
@@ -379,6 +398,13 @@
     if (!Array.isArray(datos.tramos) || datos.tramos.length === 0) {
       throw new ErrorDatos('El río no tiene tramos', `${carpetaDatos}/${id}.json no trae tramos`);
     }
+    const estaciones = await leerEstaciones(id);
+    if (pedido !== pedidoRio) return false;
+    // Los valores del año entero se guardan para poder volver a ellos
+    for (const tramo of datos.tramos) {
+      tramo.anual = {};
+      for (const campo of CAMPOS_ESTACION) tramo.anual[campo] = tramo[campo];
+    }
     const nombre = datos.nombre || id;
     window.Sonido.reiniciar();
     window.Mapa.cargar(datos, modoNormalizacion);
@@ -386,6 +412,9 @@
     consultaActual = null;
     indiceAnterior = -1;
     cursorAnterior = null;
+    estacionesRio = estaciones;
+    mostrarEstaciones();
+    if (estacionActual) aplicarEstacion();
     document.title = `${nombre}, mapa sonoro`;
     elementos.titulo.textContent = nombre;
     ajustarTitulo();
@@ -407,6 +436,63 @@
       elementos.detalle.textContent = `${error.titulo || 'No se pudo cargar el río'}. ${error.message}`;
       anunciar(`No se pudo cargar el río ${nombre}`, true);
     }
+  });
+
+  // 6b. Estaciones del año. Cada tramo toma los valores de la estación elegida, o los del año
+  // entero. Como en la normalización, lo que está sonando no se corta, el cambio entra en la nota
+  // siguiente. Un río sin archivo de estaciones se escucha solo con el año entero.
+  async function leerEstaciones(id) {
+    try {
+      const datos = await leerJson(`estaciones/${id}.json`);
+      return datos && datos.estaciones ? datos.estaciones : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function textoMeses(meses) {
+    if (!Array.isArray(meses) || meses.length === 0) return '';
+    return `${NOMBRES_MESES[meses[0] - 1]} a ${NOMBRES_MESES[meses[meses.length - 1] - 1]}`;
+  }
+
+  function mostrarEstaciones() {
+    const selector = elementos.selectorEstacion;
+    selector.innerHTML = '';
+    const todoElAnio = document.createElement('option');
+    todoElAnio.value = '';
+    todoElAnio.textContent = 'Todo el año';
+    selector.appendChild(todoElAnio);
+    for (const [clave, titulo] of Object.entries(ESTACIONES)) {
+      if (!estacionesRio || !estacionesRio[clave]) continue;
+      const opcion = document.createElement('option');
+      opcion.value = clave;
+      opcion.textContent = `${titulo}, ${textoMeses(estacionesRio[clave].meses)}`;
+      selector.appendChild(opcion);
+    }
+    if (!estacionesRio || !estacionesRio[estacionActual]) estacionActual = '';
+    selector.value = estacionActual;
+    selector.disabled = selector.options.length < 2;
+  }
+
+  // Copia en cada tramo los valores de la estación actual, y redibuja y actualiza el panel y el sonido
+  function aplicarEstacion() {
+    const estacion = estacionActual && estacionesRio ? estacionesRio[estacionActual] : null;
+    for (const tramo of window.Mapa.tramos) {
+      const valores = (estacion && estacion.tramos[tramo.id]) || tramo.anual;
+      for (const campo of CAMPOS_ESTACION) tramo[campo] = valores[campo];
+    }
+    window.Mapa.fijarNormalizacion(modoNormalizacion);
+    window.Mapa.dibujarBase(contextoBase);
+    if (consultaActual) {
+      window.Sonido.fijarTramo(consultaActual.tramo);
+      mostrarTramo(consultaActual.tramo);
+    }
+  }
+
+  elementos.selectorEstacion.addEventListener('change', () => {
+    estacionActual = elementos.selectorEstacion.value;
+    aplicarEstacion();
+    actualizarDireccion();
   });
 
   // 7. Normalización. Cada tramo trae las dos y tramo.norma apunta a la elegida, que es lo que
@@ -522,8 +608,8 @@
   portada.addEventListener('click', iniciar);
 
   window.addEventListener('keydown', (evento) => {
-    // En el selector de río las teclas son del selector
-    if (evento.target === elementos.selector) return;
+    // En los selectores de río y de estación las teclas son del selector
+    if (evento.target === elementos.selector || evento.target === elementos.selectorEstacion) return;
     if (!iniciado) {
       if (evento.key === 'Tab') return;
       evento.preventDefault();

@@ -1,6 +1,7 @@
 {
   "id": "mississippi",
   "nombre": "Mississippi",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "74300100016"
