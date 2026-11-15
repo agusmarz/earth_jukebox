@@ -1,6 +1,7 @@
 {
   "id": "amazonas",
   "nombre": "Amazonas",
+  "hemisferio": "sur",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "62100100016"

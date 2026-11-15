@@ -24,6 +24,9 @@ MESES_NORTE = {
     "primavera": [3, 4, 5],
 }
 CAMPOS = ["pasadas", "valor", "normas", "corregido", "medido", "interpolado"]
+# Una estación con menos tramos medidos que esta fracción de los del año entero no se escribe, y la demo
+# no la ofrece. Con los diez ríos de hoy el peor caso es 0,89, así que no deja afuera ninguna.
+MINIMO_MEDIDOS = 0.5
 
 
 def meses_por_estacion(hemisferio):
@@ -32,10 +35,19 @@ def meses_por_estacion(hemisferio):
     return {estacion: [(mes + 5) % 12 + 1 for mes in meses] for estacion, meses in MESES_NORTE.items()}
 
 
-def armar(rio, por_estacion, ids_anuales):
+def medidos(datos):
+    return sum(1 for t in datos["tramos"] if t["pasadas"] and t["pasadas"] > 0)
+
+
+def armar(rio, por_estacion, anual):
     """por_estacion es {estacion: (meses, datos, resumen)} con datos en el formato de demo/datos/<id>.json."""
     salida = {"version": VERSION, "id": rio["id"], "hemisferio": rio["hemisferio"], "estaciones": {}}
+    ids_anuales = [t["id"] for t in anual["tramos"]]
     for estacion, (meses, datos, _) in por_estacion.items():
+        fraccion = medidos(datos) / max(medidos(anual), 1)
+        if fraccion < MINIMO_MEDIDOS:
+            print(f"{estacion}: solo {fraccion:.0%} de los tramos medidos del año, no se escribe")
+            continue
         ids = [t["id"] for t in datos["tramos"]]
         if ids != ids_anuales:
             raise SystemExit(f"{estacion}: los tramos no coinciden con los del año entero, "

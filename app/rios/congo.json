@@ -1,6 +1,7 @@
 {
   "id": "congo",
   "nombre": "Congo",
+  "hemisferio": "sur",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "13211000016"

@@ -1,6 +1,7 @@
 {
   "id": "orinoco",
   "nombre": "Orinoco",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "61309000016"

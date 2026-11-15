@@ -1,6 +1,7 @@
 {
   "id": "yangtse",
   "nombre": "Yangtsé",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "43309000016"

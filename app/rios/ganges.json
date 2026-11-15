@@ -1,6 +1,7 @@
 {
   "id": "ganges",
   "nombre": "Ganges-Brahmaputra-Meghna",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "45311100016"

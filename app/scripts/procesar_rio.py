@@ -10,13 +10,13 @@ Pasos, en este orden
     exportar  datos/<id>/observaciones.csv, metricas.csv y tramos.geojson
     mapas     mapas/<id>/<variable>.html y .png
     demo      demo/datos/<id>.json y demo/datos/indice.json
-    estaciones demo/datos/estaciones/<id>.json, una versión de la demo por estación del año (solo con --pasos)
+    estaciones demo/datos/estaciones/<id>.json, una versión de la demo por estación del año
 """
 import argparse
 import sys
 
 from swot import cargar_rio
-from swot.pasos import PASOS, PASOS_POR_DEFECTO, correr
+from swot.pasos import PASOS, correr
 
 
 def main():
@@ -24,8 +24,8 @@ def main():
     sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Procesa un río de SWORD con datos SWOT de Hydrocron")
     parser.add_argument("id", help="nombre del archivo de configuración en rios/, sin .json")
-    parser.add_argument("--pasos", nargs="+", choices=PASOS, default=PASOS_POR_DEFECTO,
-                        help="pasos a correr (por defecto todos menos estaciones)")
+    parser.add_argument("--pasos", nargs="+", choices=PASOS, default=PASOS,
+                        help="pasos a correr (por defecto todos)")
     parser.add_argument("--actualizar", action="store_true", help="volver a bajar de Hydrocron aunque esté en la caché")
     argumentos = parser.parse_args()
     correr(cargar_rio(argumentos.id), argumentos.pasos, argumentos.actualizar)

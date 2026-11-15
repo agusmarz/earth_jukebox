@@ -1,6 +1,7 @@
 {
   "id": "lena",
   "nombre": "Lena",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "34100007566"

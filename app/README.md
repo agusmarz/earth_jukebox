@@ -43,8 +43,8 @@ La cantidad de tramos depende del largo del cauce en SWORD y de cuántos tramos 
    }
    ```
 
-   El `id` tiene que coincidir con el nombre del archivo. `etiquetas_a_la_izquierda` y `ciudades_solo_mapas` son opcionales, y si no ponés `criterios` se usan los relativos. Ese es, recortado, el `rios/mississippi.json` real.
-3. **Corré `python procesar_rio.py <id>`** desde `scripts/`. Baja lo que haga falta, deja los datos en `datos/<id>/`, los mapas en `mapas/<id>/`, la demo en `demo/datos/<id>.json` y suma el río a `demo/datos/indice.json`.
+   El `id` tiene que coincidir con el nombre del archivo. `etiquetas_a_la_izquierda` y `ciudades_solo_mapas` son opcionales, si no ponés `criterios` se usan los relativos y si no ponés `hemisferio` (`"norte"` o `"sur"`, para las estaciones del año) se usa el norte. Ese es, recortado, el `rios/mississippi.json` real.
+3. **Corré `python procesar_rio.py <id>`** desde `scripts/`. Baja lo que haga falta, deja los datos en `datos/<id>/`, los mapas en `mapas/<id>/`, la demo en `demo/datos/<id>.json`, sus estaciones del año en `demo/datos/estaciones/<id>.json` y suma el río a `demo/datos/indice.json`.
 
 La primera vez que se procesa un río de un continente se baja una sola vez el GeoPackage de tramos de SWORD v17b de ese continente (de 130 a 330 MB comprimido, según el continente). Si alguno pesara más de 1 GB, el proceso para y avisa sin bajarlo.
 
@@ -83,9 +83,9 @@ Necesita Python 3.9 o más y `pip install requests pandas numpy matplotlib foliu
 
 ```bash
 cd scripts
-python procesar_rio.py parana                    # los cuatro pasos
+python procesar_rio.py parana                    # todos los pasos
 python procesar_rio.py parana --pasos demo       # solo la demo, sin red
-python procesar_rio.py mississippi --pasos estaciones  # la demo por estación del año, sin red
+python procesar_rio.py parana --pasos estaciones # solo las estaciones, sin red
 python procesar_rio.py parana --actualizar       # vuelve a bajar todo de Hydrocron con las pasadas nuevas
 python probar_regresion.py                       # verifica el Paraná contra el commit 9fe5bb5
 ```
@@ -112,7 +112,9 @@ En los dos modos, si queda un hueco entre tramos consecutivos del cauce se cierr
 
 Cada métrica se normaliza entre 0 y 1 de dos maneras, y la demo deja elegir con un botón. La `propia` usa los percentiles 5 y 95 de los valores medidos del río, en escala logarítmica para ancho y amplitud (y para nivel con criterios absolutos). La `global` usa los rangos fijos de `rios/escalas_globales.json`, así sumar un río no cambia cómo suenan los otros. Esos rangos (ancho de 100 m a 10 km, nivel de 1 a 2000 m, pendiente de 0 a 25 cm/km y amplitud de 0,5 a 15 m) son órdenes de magnitud de los ríos grandes elegidos a mano, no ajustados a ningún conjunto de datos, y el archivo explica de dónde sale cada uno.
 
-**estaciones.** No corre por defecto, se pide con `--pasos estaciones`. Para cada estación toma solo las pasadas buenas de sus tres meses, de todos los años medidos (verano de junio a agosto, otoño de septiembre a noviembre, invierno de diciembre a febrero y primavera de marzo a mayo en el hemisferio norte, corridos seis meses si `rios/<id>.json` dice `"hemisferio": "sur"`, que por defecto es `"norte"`). Con esas pasadas calcula las mismas cuatro métricas y las pasa por lo mismo que el paso demo. La normalización propia no se recalcula por estación, se usa la del año entero, así las cuatro comparten la escala y suenan distinto. Escribe `demo/datos/estaciones/<id>.json` e imprime, por estación, las pasadas por tramo, cuántos tramos tienen datos, la mediana de cada métrica y cuánto se mueve la norma de cada tramo respecto del año.
+**estaciones.** Para cada estación toma solo las pasadas buenas de sus tres meses, de todos los años medidos (verano de junio a agosto, otoño de septiembre a noviembre, invierno de diciembre a febrero y primavera de marzo a mayo en el hemisferio norte, corridos seis meses si `rios/<id>.json` dice `"hemisferio": "sur"`, que por defecto es `"norte"`). Con esas pasadas calcula las mismas cuatro métricas y las pasa por lo mismo que el paso demo. La normalización propia no se recalcula por estación, se usa la del año entero, así las cuatro comparten la escala y suenan distinto. Escribe `demo/datos/estaciones/<id>.json` e imprime, por estación, las pasadas por tramo, cuántos tramos tienen datos, la mediana de cada métrica y cuánto se mueve la norma de cada tramo respecto del año. Una estación con menos de la mitad de los tramos medidos que el año entero no se escribe, y la demo no la ofrece (`MINIMO_MEDIDOS` en `swot/estaciones.py`). Con los diez ríos de hoy el peor caso es el 89 % (Amazonas en invierno y Yangtsé en primavera), así que están las cuatro estaciones en todos.
+
+El hemisferio de cada río está en su `rios/<id>.json`. Paraná, Amazonas y Congo van con `"sur"` y el resto con `"norte"`. En el Amazonas y el Congo es una convención: los dos cruzan o rozan el ecuador, sus desembocaduras están al sur, y en esos ríos lo que manda son las épocas de lluvia y no las estaciones.
 
 ## Contrato de demo/datos
 

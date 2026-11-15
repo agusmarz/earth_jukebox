@@ -1,6 +1,7 @@
 {
   "id": "parana",
   "nombre": "Paraná",
+  "hemisferio": "sur",
   "seleccion": {
     "modo": "ids",
     "ids": [

@@ -1,6 +1,7 @@
 {
   "id": "mekong",
   "nombre": "Mekong",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "44301000016"

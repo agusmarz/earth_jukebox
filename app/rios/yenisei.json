@@ -1,6 +1,7 @@
 {
   "id": "yenisei",
   "nombre": "Yeniséi",
+  "hemisferio": "norte",
   "seleccion": {
     "modo": "topologia",
     "desembocadura": "32100500016"

@@ -6,7 +6,6 @@ exportar  arma datos/<id>/observaciones.csv, metricas.csv y tramos.geojson.
 mapas     hace los mapas de mapas/<id>/.
 demo      escribe demo/datos/<id>.json y actualiza demo/datos/indice.json.
 estaciones escribe demo/datos/estaciones/<id>.json, los mismos datos de la demo para cada estación del año.
-          No corre por defecto, se pide con --pasos estaciones.
 """
 import json
 
@@ -18,8 +17,6 @@ from .metricas import (COLUMNAS_METRICAS, VARIABLES_MAPAS, calcular_metricas, en
                        leer_observaciones, leer_tramos_geojson, sumar_tramos_solo_sword)
 
 PASOS = ["bajar", "exportar", "mapas", "demo", "estaciones"]
-# Por ahora estaciones se pide a mano con --pasos estaciones, mientras se prueba con un río
-PASOS_POR_DEFECTO = ["bajar", "exportar", "mapas", "demo"]
 
 
 def archivo_seleccion(id_rio):
@@ -151,7 +148,6 @@ def preparar_estaciones(rio, escribir=True):
     # El año entero da la normalización propia que comparten las cuatro estaciones
     candidatos = demo_rio.tramos_candidatos(obs_huecos, geo_huecos, solo_sword_huecos)
     anual, resumen_anual = demo_rio.preparar(rio, tramos_anuales, candidatos)
-    ids_anuales = [t["id"] for t in anual["tramos"]]
 
     por_estacion = {}
     for estacion, meses in estaciones_rio.meses_por_estacion(rio["hemisferio"]).items():
@@ -160,7 +156,7 @@ def preparar_estaciones(rio, escribir=True):
         datos, resumen = demo_rio.preparar(rio, tramos, candidatos, resumen_anual["normalizadores"])
         por_estacion[estacion] = (meses, datos, resumen)
 
-    salida = estaciones_rio.armar(rio, por_estacion, ids_anuales)
+    salida = estaciones_rio.armar(rio, por_estacion, anual)
     estaciones_rio.imprimir_resumen(por_estacion, anual)
     if escribir:
         archivo = estaciones_rio.escribir(salida)
