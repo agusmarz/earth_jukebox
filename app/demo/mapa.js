@@ -141,7 +141,10 @@
       unidades: datos.unidades,
     };
     fijarNormalizacion(modo);
-    if (vista.ancho > 0) ajustar(vista.ancho, vista.alto, vista.relleno);
+    vista.zoom = 1;
+    vista.centroX = minX + anchoMapa / 2;
+    vista.centroY = minY + altoMapa / 2;
+    if (vista.ancho > 0) ajustar(vista.ancho, vista.alto, vista.relleno, vista.anchoLienzo);
   }
 
   // Punto más cercano sobre la polilínea de un tramo, para afinar lo que da la grilla
@@ -160,17 +163,73 @@
     return mejor;
   }
 
-  // 4. Vista, cómo se ubica el mapa en la pantalla
-  const vista = { escala: 1, desplazamientoX: 0, desplazamientoY: 0, ancho: 0, alto: 0, relleno: 0 };
+  // 4. Vista, cómo se ubica el mapa en la pantalla. El río entra entero en el área de ancho x alto
+  // (la parte del lienzo que no tapa el panel) con zoom 1. Con más zoom se ve una parte, centrada en
+  // (centroX, centroY), en unidades del mapa. anchoLienzo es el ancho total del lienzo, para el fondo.
+  const ZOOM_MAXIMO = 12;
+  const vista = {
+    escala: 1, escalaBase: 1, zoom: 1, centroX: 0, centroY: 0,
+    desplazamientoX: 0, desplazamientoY: 0, ancho: 0, alto: 0, anchoLienzo: 0,
+    relleno: { arriba: 0, abajo: 0, izquierda: 0, derecha: 0 },
+  };
 
-  function ajustar(ancho, alto, relleno) {
+  // relleno es un número (igual en los cuatro lados) o { arriba, abajo, izquierda, derecha }
+  function ajustar(ancho, alto, relleno, anchoLienzo = ancho) {
     vista.ancho = ancho;
     vista.alto = alto;
-    vista.relleno = relleno;
+    vista.relleno = typeof relleno === 'number'
+      ? { arriba: relleno, abajo: relleno, izquierda: relleno, derecha: relleno }
+      : relleno;
+    vista.anchoLienzo = anchoLienzo;
     if (!rio) return;
-    vista.escala = Math.min((ancho - 2 * relleno) / rio.anchoMapa, (alto - 2 * relleno) / rio.altoMapa);
-    vista.desplazamientoX = (ancho - rio.anchoMapa * vista.escala) / 2;
-    vista.desplazamientoY = (alto - rio.altoMapa * vista.escala) / 2;
+    const { anchoArea, altoArea } = area();
+    vista.escalaBase = Math.min(anchoArea / rio.anchoMapa, altoArea / rio.altoMapa);
+    aplicarVista();
+  }
+
+  // Rectángulo útil del lienzo, sin los rellenos, y su centro
+  function area() {
+    const { arriba, abajo, izquierda, derecha } = vista.relleno;
+    const anchoArea = Math.max(1, vista.ancho - izquierda - derecha);
+    const altoArea = Math.max(1, vista.alto - arriba - abajo);
+    return { anchoArea, altoArea, centroPantallaX: izquierda + anchoArea / 2, centroPantallaY: arriba + altoArea / 2 };
+  }
+
+  // Calcula escala y desplazamiento a partir del zoom y el centro, sin dejar que el río se vaya de la vista
+  function aplicarVista() {
+    vista.zoom = Math.max(1, Math.min(ZOOM_MAXIMO, vista.zoom));
+    vista.escala = vista.escalaBase * vista.zoom;
+    const { anchoArea, altoArea, centroPantallaX, centroPantallaY } = area();
+    const medioAncho = anchoArea / (2 * vista.escala);
+    const medioAlto = altoArea / (2 * vista.escala);
+    const limitar = (centro, minimo, largo, medio) => (medio * 2 >= largo
+      ? minimo + largo / 2
+      : Math.max(minimo + medio, Math.min(minimo + largo - medio, centro)));
+    vista.centroX = limitar(vista.centroX, rio.minX, rio.anchoMapa, medioAncho);
+    vista.centroY = limitar(vista.centroY, rio.minY, rio.altoMapa, medioAlto);
+    vista.desplazamientoX = centroPantallaX - (vista.centroX - rio.minX) * vista.escala;
+    vista.desplazamientoY = centroPantallaY - (vista.centroY - rio.minY) * vista.escala;
+  }
+
+  // Cambia el zoom dejando quieto el punto del mapa que está bajo (px, py)
+  function fijarZoom(zoom, px, py) {
+    if (!rio) return;
+    const { centroPantallaX, centroPantallaY } = area();
+    if (px === undefined) px = centroPantallaX;
+    if (py === undefined) py = centroPantallaY;
+    const [mx, my] = desdePantalla(px, py);
+    vista.zoom = Math.max(1, Math.min(ZOOM_MAXIMO, zoom));
+    vista.escala = vista.escalaBase * vista.zoom;
+    vista.centroX = mx - (px - centroPantallaX) / vista.escala;
+    vista.centroY = my - (py - centroPantallaY) / vista.escala;
+    aplicarVista();
+  }
+
+  function centrarEn(mx, my) {
+    if (!rio) return;
+    vista.centroX = mx;
+    vista.centroY = my;
+    aplicarVista();
   }
   const aPantalla = (x, y) => [
     vista.desplazamientoX + (x - rio.minX) * vista.escala,
@@ -208,13 +267,14 @@
   }
 
   function dibujarBase(contexto) {
-    const { ancho, alto } = vista;
+    const { alto } = vista;
+    const ancho = vista.anchoLienzo || vista.ancho;
     contexto.fillStyle = '#ffffff';
     contexto.fillRect(0, 0, ancho, alto);
 
     // Malla de puntos sutil de fondo
-    contexto.fillStyle = '#d6d6d6';
-    const PASO_MALLA = 16;
+    contexto.fillStyle = '#e2e2e2';
+    const PASO_MALLA = 10;
     for (let y = PASO_MALLA / 2; y < alto; y += PASO_MALLA) {
       for (let x = PASO_MALLA / 2; x < ancho; x += PASO_MALLA) {
         contexto.fillRect(x, y, 1.2, 1.2);
@@ -237,7 +297,9 @@
 
     // Las etiquetas van a la derecha de cada ciudad. Si hay otra ciudad al este tan cerca que
     // la etiqueta la pisaría, va a la izquierda (pasa con dos ciudades enfrentadas en las dos orillas).
-    contexto.font = '500 13px Archivo, system-ui, sans-serif';
+    // Ciudades como en el diseño, un cuadrado negro y el nombre en gris
+    const LADO_CIUDAD = 14;
+    contexto.font = '400 14px Archivo, system-ui, sans-serif';
     contexto.textBaseline = 'middle';
     const enPantalla = ciudades.map((ciudad) => {
       const [px, py] = aPantalla(...ciudad.punto);
@@ -245,12 +307,50 @@
     });
     for (const ciudad of enPantalla) {
       const aLaIzquierda = enPantalla.some((otra) => otra !== ciudad && otra.px > ciudad.px
-        && otra.px - ciudad.px < ciudad.ancho + 18 && Math.abs(otra.py - ciudad.py) < 16);
-      contexto.fillStyle = '#6b6b6b';
-      contexto.fillRect(ciudad.px - 3, ciudad.py - 3, 6, 6);
+        && otra.px - ciudad.px < ciudad.ancho + 26 && Math.abs(otra.py - ciudad.py) < 18);
+      contexto.fillStyle = '#000000';
+      contexto.fillRect(ciudad.px - LADO_CIUDAD / 2, ciudad.py - LADO_CIUDAD / 2, LADO_CIUDAD, LADO_CIUDAD);
+      contexto.fillStyle = '#8c8c8c';
       contexto.textAlign = aLaIzquierda ? 'right' : 'left';
-      contexto.fillText(ciudad.nombre, ciudad.px + (aLaIzquierda ? -9 : 9), ciudad.py);
+      const separacion = LADO_CIUDAD / 2 + 9;
+      contexto.fillText(ciudad.nombre, ciudad.px + (aLaIzquierda ? -separacion : separacion), ciudad.py + 6);
     }
+  }
+
+  // Minimapa, el río entero en chico y un rectángulo con la parte que se ve
+  function dibujarMinimapa(contexto, ancho, alto) {
+    contexto.clearRect(0, 0, ancho, alto);
+    if (!rio) return;
+    const relleno = 8;
+    const escala = Math.min((ancho - 2 * relleno) / rio.anchoMapa, (alto - 2 * relleno) / rio.altoMapa);
+    const dx = (ancho - rio.anchoMapa * escala) / 2;
+    const dy = (alto - rio.altoMapa * escala) / 2;
+    const aMini = (x, y) => [dx + (x - rio.minX) * escala, dy + (y - rio.minY) * escala];
+    contexto.lineCap = 'round';
+    contexto.lineJoin = 'round';
+    contexto.strokeStyle = '#1a1a1a';
+    contexto.lineWidth = 0.9;
+    for (const tramo of rio.tramos) {
+      contexto.beginPath();
+      tramo.puntos.forEach(([x, y], k) => {
+        const [px, py] = aMini(x, y);
+        if (k === 0) contexto.moveTo(px, py);
+        else contexto.lineTo(px, py);
+      });
+      contexto.stroke();
+    }
+    const [x0, y0] = aMini(...desdePantalla(0, 0));
+    const [x1, y1] = aMini(...desdePantalla(vista.ancho, vista.alto));
+    contexto.strokeStyle = '#21b87a';
+    contexto.lineWidth = 1.2;
+    const izquierda = Math.max(1, x0), arriba = Math.max(1, y0);
+    contexto.strokeRect(izquierda, arriba, Math.min(ancho - 1, x1) - izquierda, Math.min(alto - 1, y1) - arriba);
+    // Para pasar de un clic en el minimapa a unidades del mapa
+    rio.desdeMinimapa = (px, py) => [rio.minX + (px - dx) / escala, rio.minY + (py - dy) / escala];
+  }
+
+  function desdeMinimapa(px, py) {
+    return rio && rio.desdeMinimapa ? rio.desdeMinimapa(px, py) : null;
   }
 
   function resaltarTramo(contexto, tramo) {
@@ -262,6 +362,15 @@
 
   window.Mapa = {
     cargar, fijarNormalizacion, ajustar, consultar, dibujarBase, resaltarTramo,
+    fijarZoom, centrarEn, dibujarMinimapa, desdeMinimapa,
+    get zoom() { return vista.zoom; },
+    // Rectángulo del lienzo donde entra el río, sin lo que tapan el panel, el logo y las fuentes, en
+    // píxeles CSS. Lo usa manos.js para que la zona de la mano cubra justo esa parte
+    get areaUtil() {
+      if (!vista.relleno || vista.ancho === 0) return null;
+      const { anchoArea, altoArea } = area();
+      return { x: vista.relleno.izquierda, y: vista.relleno.arriba, ancho: anchoArea, alto: altoArea };
+    },
     get cargado() { return rio !== null; },
     get tramos() { return rio ? rio.tramos : []; },
     get unidades() { return rio ? rio.unidades : {}; },

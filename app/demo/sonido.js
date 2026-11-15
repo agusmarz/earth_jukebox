@@ -717,7 +717,7 @@
 
     // Qué instrumentos tocan cada característica con la música elegida, para el panel
     instrumentosDe(variable) {
-      const nombres = { cuerdas: 'Cuerdas', maderas: 'Maderas', arpa: 'Arpa y timbal', bajo: 'Contrabajo y cornos' };
+      const nombres = { cuerdas: 'Strings', maderas: 'Woodwinds', arpa: 'Harp and timpani', bajo: 'Double bass and horns' };
       const grupo = Object.keys(nombres).find((g) => variableDe(g) === variable);
       return nombres[grupo];
     },

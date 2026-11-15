@@ -57,6 +57,8 @@ jobs:
           refs += [u for u in re.findall(r"url\(['\"]?([^'\")]+)", leer('estilos.css'))
                    if not u.startswith('data:')]
           for r in refs:
+              if r.startswith('#'):
+                  continue  # anclas internas, como los íconos de <use href="#...">
               if r.startswith(('/', 'http:', 'https:', '//')):
                   errores.append(f'ruta no relativa: {r}')
               elif not (raiz / r.split('?')[0]).is_file():

@@ -17,12 +17,18 @@
   font-display: swap;
 }
 
+/* --u es un píxel de los diseños (pensados en unos 1160 x 645), así todo escala con la ventana
+   y mantiene las proporciones de los PNG de earth_jukebox_design. */
 :root {
+  --u: min(calc(100vw / 1160), calc(100vh / 645));
   --blanco: #ffffff;
   --negro: #000000;
-  --gris: #6b6b6b;
-  --gris-claro: #ececec;
-  --ancho-panel: 380px;
+  --gris-texto: #8c8c8c;
+  --gris-pista: #d9d9d9;
+  --gris-apagado: #cfcfcf;
+  --gris-panel: #f4f4f4;
+  --verde-marca: #21b87a;
+  --texto-chico: max(11px, calc(11.5 * var(--u)));
 }
 
 * {
@@ -40,15 +46,382 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body {
-  display: grid;
-  grid-template-columns: 1fr var(--ancho-panel);
+p {
+  margin: 0;
 }
 
-#contenedor-mapa {
-  position: relative;
-  min-width: 0;
-  height: 100vh;
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.vista {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  animation: aparecer 380ms ease-out;
+}
+
+.vista[hidden] {
+  display: none;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vista { animation: none; }
+}
+
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.icono {
+  width: 1.3em;
+  height: 1.3em;
+  flex: none;
+}
+
+/* Trama de puntos que tienen los tres diseños */
+.trama {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.07) 0.7px, transparent 1.1px);
+  background-size: 5px 5px;
+}
+
+.trama-clara {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0.7px, transparent 1.1px);
+}
+
+/* Pestaña negra que sale del borde de abajo, en la bienvenida y en el menú */
+.pestana {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(62 * var(--u));
+  min-height: 48px;
+  border: 0;
+  border-radius: calc(12 * var(--u)) calc(12 * var(--u)) 0 0;
+  background: var(--negro);
+  color: var(--blanco);
+}
+
+/* Logo de tres líneas, arriba a la izquierda */
+.logo {
+  position: absolute;
+  top: calc(44 * var(--u));
+  left: calc(40 * var(--u));
+  margin: 0;
+  font-weight: 800;
+  font-size: max(13px, calc(17 * var(--u)));
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-transform: uppercase;
+  z-index: 3;
+}
+
+.logo-claro {
+  color: var(--blanco);
+}
+
+.logo-oscuro {
+  color: var(--negro);
+}
+
+/* ---------- 1. Bienvenida ---------- */
+
+#vista-bienvenida {
+  background: var(--blanco);
+}
+
+.bienvenida-fondo {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 22% 30% at 52% 100%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 75%),
+    radial-gradient(ellipse 24% 42% at 47% 80%, rgba(46, 170, 122, 0.95), rgba(46, 170, 122, 0) 75%),
+    radial-gradient(ellipse 16% 30% at 64% 88%, rgba(255, 236, 214, 0.85), rgba(255, 236, 214, 0) 75%),
+    linear-gradient(90deg, #0a5a96 0%, #1068a8 20%, #1a7f9c 34%, #26987f 45%, #6fbf98 54%, #e9c9a3 62%, #de7d2e 70%, #cf600f 82%, #c4560b 100%);
+}
+
+/* Continentes oscuros y difusos detrás del color */
+.bienvenida-mundo {
+  position: absolute;
+  left: -14%;
+  top: 22%;
+  width: 128%;
+  height: 92%;
+  fill: rgba(10, 30, 50, 0.32);
+  filter: blur(calc(4 * var(--u)));
+  mix-blend-mode: multiply;
+}
+
+/* La parte blanca de arriba es una elipse enorme que deja ver el color en un arco */
+.bienvenida-arco {
+  position: absolute;
+  left: 50%;
+  bottom: 26.5%;
+  width: 150vw;
+  height: 244vh;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--blanco);
+}
+
+#vista-bienvenida .trama {
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.06) 0.7px, transparent 1.1px);
+}
+
+.boton-microfono {
+  position: absolute;
+  top: calc(36 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  height: calc(38 * var(--u));
+  min-height: 32px;
+  padding: 0 calc(16 * var(--u));
+  border: 1px solid #dedede;
+  border-radius: calc(6 * var(--u));
+  background: var(--blanco);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-weight: 800;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: default;
+  z-index: 2;
+}
+
+.bienvenida-contenido {
+  position: absolute;
+  top: calc(104 * var(--u));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 2;
+}
+
+.titulo-gigante {
+  margin: 0;
+  font-weight: 800;
+  font-size: calc(104 * var(--u));
+  line-height: 0.83;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+}
+
+.bienvenida-texto {
+  margin-top: calc(26 * var(--u));
+  max-width: calc(430 * var(--u));
+  font-size: max(11px, calc(13 * var(--u)));
+  line-height: 1.15;
+}
+
+.pestana-continuar {
+  width: calc(308 * var(--u));
+  min-width: 230px;
+  gap: 0.3em;
+  font-weight: 800;
+  font-size: max(13px, calc(17 * var(--u)));
+  color: #8e8e8e;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 160ms;
+}
+
+.pestana-continuar strong {
+  color: var(--blanco);
+  font-weight: 800;
+}
+
+.pestana-continuar:hover {
+  background: #1d1d1d;
+}
+
+.pestana-continuar:focus-visible {
+  outline: 3px solid var(--blanco);
+  outline-offset: -6px;
+}
+
+/* ---------- 2. Menú de ríos ---------- */
+
+#vista-rios {
+  background: #0796ea;
+}
+
+.rios-fondo {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 45% 22% at 50% 0%, rgba(0, 18, 38, 0.65), rgba(0, 18, 38, 0) 100%),
+    linear-gradient(180deg, #06406f 0%, #0a71bb 18%, #0796ea 36%, #2aa6f0 54%, #8ccff8 74%, #e4f3fd 90%, #ffffff 100%);
+}
+
+.boton-tutorial {
+  position: absolute;
+  top: calc(38 * var(--u));
+  right: calc(50 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(14 * var(--u));
+  width: calc(137 * var(--u));
+  min-width: 110px;
+  height: calc(38 * var(--u));
+  min-height: 32px;
+  border: 0;
+  border-radius: calc(8 * var(--u));
+  background: var(--blanco);
+  font-weight: 800;
+  font-size: max(10px, calc(11 * var(--u)));
+  text-transform: uppercase;
+  cursor: default;
+  z-index: 3;
+}
+
+.icono-tutorial {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.icono-tutorial .cuadrado {
+  width: max(9px, calc(12 * var(--u)));
+  height: max(9px, calc(12 * var(--u)));
+  background: var(--negro);
+}
+
+.icono-tutorial .triangulo {
+  width: 0;
+  height: 0;
+  border-top: max(5px, calc(6.5 * var(--u))) solid transparent;
+  border-bottom: max(5px, calc(6.5 * var(--u))) solid transparent;
+  border-left: max(9px, calc(11 * var(--u))) solid var(--negro);
+}
+
+.planisferio {
+  position: absolute;
+  left: 50%;
+  top: calc(86 * var(--u));
+  width: min(calc(930 * var(--u)), 92vw);
+  transform: translateX(-50%);
+}
+
+.rios-mundo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: var(--blanco);
+  filter: drop-shadow(calc(2 * var(--u)) calc(4 * var(--u)) calc(3 * var(--u)) rgba(0, 25, 60, 0.35));
+}
+
+.guias {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  stroke: var(--negro);
+  stroke-width: 1;
+}
+
+.etiquetas-rios {
+  position: absolute;
+  inset: 0;
+}
+
+.punto-rio {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: var(--negro);
+  border: 1.5px solid var(--blanco);
+  pointer-events: none;
+}
+
+.etiqueta-rio {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: calc(8 * var(--u)) calc(16 * var(--u));
+  border-radius: calc(6 * var(--u));
+  background: var(--negro);
+  color: var(--blanco);
+  box-shadow: 0 2px 5px rgba(0, 20, 50, 0.35);
+  font-weight: 800;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 140ms ease-out, background 140ms;
+  z-index: 1;
+}
+
+.etiqueta-rio:hover,
+.etiqueta-rio:focus-visible {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: #1a1a1a;
+  z-index: 2;
+}
+
+.etiqueta-rio:focus-visible {
+  outline: 3px solid var(--blanco);
+  outline-offset: 2px;
+}
+
+.aviso-rios {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  border-radius: 6px;
+  background: var(--negro);
+  color: var(--blanco);
+  font-weight: 500;
+}
+
+.pestana-voz {
+  width: calc(128 * var(--u));
+  min-width: 96px;
+  gap: calc(8 * var(--u));
+  font-size: max(20px, calc(26 * var(--u)));
+}
+
+/* ---------- 3. Tablero del río ---------- */
+
+#vista-rio {
+  background: var(--blanco);
+}
+
+.contenedor-mapa {
+  position: absolute;
+  inset: 0;
 }
 
 #mapa {
@@ -57,69 +430,172 @@ body {
   touch-action: none;
 }
 
-#portada {
+.portada {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: calc(512 * var(--u));
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 14px;
   border: 0;
-  background: rgba(255, 255, 255, 0.82);
-  font: inherit;
-  color: inherit;
+  background: rgba(255, 255, 255, 0.78);
   cursor: pointer;
+  z-index: 2;
 }
 
-#portada[hidden] {
+.portada[hidden] {
   display: none;
 }
 
+.portada:disabled {
+  cursor: progress;
+}
+
 .portada-titulo {
+  padding: calc(16 * var(--u)) calc(28 * var(--u));
+  border-radius: calc(8 * var(--u));
   background: var(--negro);
   color: var(--blanco);
   font-weight: 800;
-  font-size: clamp(28px, 3.4vw, 46px);
-  letter-spacing: -0.03em;
-  padding: 18px 28px;
+  font-size: max(16px, calc(22 * var(--u)));
+  text-transform: uppercase;
 }
 
 .portada-texto {
-  font-size: 17px;
-  color: var(--gris);
+  max-width: 34ch;
+  color: var(--gris-texto);
+  font-size: max(13px, calc(14 * var(--u)));
+  text-align: center;
 }
 
-aside {
-  height: 100vh;
-  overflow-y: auto;
-  padding: 44px 36px 32px 8px;
+.portada:focus-visible {
+  outline: 3px solid var(--negro);
+  outline-offset: -8px;
+}
+
+.boton-volver {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.boton-volver:hover {
+  opacity: 0.7;
+}
+
+.boton-volver:focus-visible {
+  outline: 3px solid var(--negro);
+  outline-offset: 6px;
+}
+
+.fuente {
+  position: absolute;
+  left: calc(40 * var(--u));
+  bottom: calc(18 * var(--u));
+  max-width: min(calc(560 * var(--u)), 50vw);
+  color: #a6a6a6;
+  font-size: max(9px, calc(9.5 * var(--u)));
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+/* Panel gris con el borde izquierdo inclinado */
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: calc(512 * var(--u));
+  min-width: 360px;
+  padding: calc(42 * var(--u)) calc(39 * var(--u)) calc(44 * var(--u)) 0;
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  align-items: flex-end;
+  background: var(--gris-panel);
+  clip-path: polygon(calc(66 * var(--u)) 0, 100% 0, 100% 100%, 0 100%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  z-index: 3;
 }
 
-h1 {
+.panel > * {
+  width: calc(263 * var(--u));
+  min-width: 250px;
+  flex: none;
+}
+
+.titulo-rio {
   margin: 0;
+  padding-bottom: calc(14 * var(--u));
+  border-bottom: 1px solid #e0e0e0;
   font-weight: 800;
-  font-size: 76px;
-  letter-spacing: -0.04em;
-  line-height: 0.9;
+  font-size: calc(60 * var(--u));
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-align: right;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-p {
-  margin: 0;
+.capas {
+  display: flex;
+  flex-direction: column;
+  gap: calc(10 * var(--u));
+  margin-top: calc(28 * var(--u));
 }
 
-.bajada {
-  font-size: 17px;
-  line-height: 1.4;
+.capa {
+  display: grid;
+  grid-template-columns: calc(50 * var(--u)) 1fr;
+  align-items: end;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.capa .numero {
+  font-weight: 800;
+  font-size: max(36px, calc(54 * var(--u)));
+  line-height: 0.78;
+  text-align: center;
+  transition: color 160ms;
+}
+
+.capa .texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--texto-chico);
+  line-height: 1;
+}
+
+.capa .titulo {
+  font-weight: 800;
+}
+
+.capa .valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capa .pista {
+  margin-top: calc(7 * var(--u));
 }
 
 .pista {
   display: block;
-  height: 10px;
-  background: var(--gris-claro);
+  height: max(5px, calc(7 * var(--u)));
+  background: var(--gris-pista);
 }
 
 .relleno {
@@ -130,174 +606,178 @@ p {
   transition: width 120ms linear;
 }
 
-.cercania {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.capa[aria-pressed='false'] .numero,
+.capa[aria-pressed='false'] .texto {
+  color: var(--gris-apagado);
 }
 
-.etiqueta {
-  font-weight: 500;
-  font-size: 15px;
-}
-
-.cercania .pista {
-  height: 18px;
-}
-
-.estado {
-  font-size: 14px;
-  color: var(--gris);
-}
-
-.cercania .relleno {
-  transition: width 60ms linear;
-}
-
-#tramo {
-  font-weight: 800;
-  font-size: 26px;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-.detalle {
-  margin-top: 6px;
-  color: var(--gris);
-  font-size: 15px;
-}
-
-.capas {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.capa {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  gap: 14px;
-  align-items: start;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.capa .tecla {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  background: var(--negro);
-  color: var(--blanco);
-  font-weight: 800;
-  font-size: 22px;
-}
-
-.capa .texto {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.capa .titulo {
-  font-weight: 800;
-  font-size: 19px;
-  letter-spacing: -0.01em;
-}
-
-.capa .instrumento {
-  font-size: 14px;
-  color: var(--gris);
-}
-
-.capa .valor {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.capa .pista {
-  margin-top: 5px;
-  height: 8px;
-}
-
-.capa[aria-pressed='false'] .tecla {
-  background: var(--gris-claro);
-  color: var(--gris);
-}
-
-.capa[aria-pressed='false'] .titulo,
-.capa[aria-pressed='false'] .valor {
-  color: var(--gris);
-}
-
-.idioma-activo {
-  font-weight: 800;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.capa[aria-pressed='false'] .pista {
+  background: #e6e6e6;
 }
 
 .capa[aria-pressed='false'] .relleno {
   background: #bdbdbd;
 }
 
-.selector-rio {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.capa:hover .numero {
+  color: #333;
 }
 
-#selector-rio,
-#selector-estacion {
-  appearance: none;
-  border: 0;
-  border-radius: 0;
-  padding: 10px 44px 10px 12px;
-  background: var(--gris-claro)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0h12L6 8z'/%3E%3C/svg%3E")
-    no-repeat right 14px center;
-  font: inherit;
-  font-weight: 500;
-  font-size: 17px;
-  color: inherit;
-  cursor: pointer;
-}
-
-#selector-rio:disabled,
-#selector-estacion:disabled {
-  cursor: default;
-  color: var(--gris);
+.capa[aria-pressed='false']:hover .numero {
+  color: #b5b5b5;
 }
 
 .capa:focus-visible,
-#selector-rio:focus-visible,
-#selector-estacion:focus-visible,
-#portada:focus-visible {
-  outline: 3px solid var(--negro);
-  outline-offset: 4px;
+.control:focus-visible,
+.control-selector select:focus-visible {
+  outline: 2px solid var(--negro);
+  outline-offset: 3px;
 }
 
-.ayuda {
-  font-size: 14px;
-  line-height: 1.4;
+/* Tramo bajo el cuadrado y cercanía */
+.tramo {
+  margin-top: calc(18 * var(--u));
+  font-size: var(--texto-chico);
+  line-height: 1.2;
 }
 
-.fuente {
-  margin-top: auto;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--gris);
+.tramo-km {
+  font-weight: 800;
 }
 
-.solo-lector {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+.tramo-detalle {
+  margin-top: 2px;
+  color: var(--gris-texto);
+  min-height: 2.4em;
+}
+
+.cercania {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 10px;
+  margin-top: calc(8 * var(--u));
+}
+
+.cercania .pista {
+  height: 4px;
+}
+
+.cercania .relleno {
+  transition: width 60ms linear;
+}
+
+.cercania-etiqueta {
+  font-weight: 800;
+}
+
+/* Controles que ya tenía la demo, en el estilo del panel */
+.controles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: calc(12 * var(--u));
+  font-size: var(--texto-chico);
+}
+
+.control-selector {
+  grid-column: span 3;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.control-etiqueta {
+  font-weight: 800;
+}
+
+.control-selector select {
+  width: 100%;
+  appearance: none;
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 22px 6px 8px;
+  background: #e6e6e6
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0h8L4 5z'/%3E%3C/svg%3E")
+    no-repeat right 8px center;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.control-selector select:disabled {
+  color: var(--gris-texto);
+  cursor: default;
+}
+
+.control {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: #e6e6e6;
+  font-size: var(--texto-chico);
+  text-align: left;
+  cursor: pointer;
+}
+
+.control:hover {
+  background: #dcdcdc;
+}
+
+.control .tecla {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--negro);
+  color: var(--blanco);
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.control-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.05;
+}
+
+.control-texto > span {
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.control-texto .control-etiqueta {
+  font-weight: 400;
+  color: var(--gris-texto);
+  font-size: 0.9em;
+}
+
+/* Manos y minimapa, abajo del panel */
+.pie-panel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: calc(18 * var(--u));
+}
+
+.minimapa {
+  width: calc(113 * var(--u));
+  min-width: 90px;
+  aspect-ratio: 113 / 82;
+  height: auto;
+  background: #ebebeb;
+  cursor: crosshair;
+  touch-action: none;
 }

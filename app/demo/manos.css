@@ -1,0 +1,171 @@
+/* Panel de la cámara para el control por gestos (manos.js). Va abajo a la derecha, en el pie del
+   panel del río al lado del minimapa (.camara-en-pie). Si la página no tiene ese pie, flota en la
+   esquina inferior derecha del mapa, pegado al panel gris (que mide max(512u, 360px) de ancho) */
+
+.camara {
+  position: absolute;
+  right: calc(max(calc(512 * var(--u, 1px)), 360px) + calc(20 * var(--u, 1px)));
+  bottom: calc(44 * var(--u, 1px));
+  z-index: 4;
+  width: max(200px, calc(250 * var(--u, 1px)));
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Archivo', system-ui, sans-serif;
+  color: var(--negro, #000);
+}
+
+.camara-vista[hidden],
+.camara-aviso[hidden] {
+  display: none;
+}
+
+.camara-vista {
+  align-self: stretch;
+  background: var(--negro, #000);
+  border: 2px solid var(--negro, #000);
+}
+
+.camara-lienzo {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--negro, #000);
+}
+
+.camara-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 8px 8px;
+  background: var(--blanco, #fff);
+  font-size: var(--texto-chico, 11px);
+  line-height: 1.25;
+}
+
+.camara-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.camara-etiqueta {
+  flex: none;
+  width: 34px;
+  font-weight: 800;
+}
+
+.camara-dedos {
+  display: flex;
+  gap: 4px;
+}
+
+.camara-dedo {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--negro, #000);
+  font-weight: 800;
+  font-size: 11px;
+  color: var(--negro, #000);
+  background: var(--blanco, #fff);
+}
+
+.camara-dedo.arriba {
+  background: var(--negro, #000);
+  color: var(--blanco, #fff);
+}
+
+.camara-dedo.sin-mano {
+  border-color: var(--gris-apagado, #cfcfcf);
+  color: var(--gris-apagado, #cfcfcf);
+}
+
+.camara-giro {
+  font-variant-numeric: tabular-nums;
+}
+
+.camara-pista {
+  display: block;
+  height: 4px;
+  background: var(--gris-pista, #d9d9d9);
+}
+
+.camara-relleno {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--negro, #000);
+}
+
+.camara-relleno.atras {
+  margin-left: auto;
+}
+
+.camara-aviso {
+  align-self: stretch;
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--blanco, #fff);
+  border: 2px solid var(--negro, #000);
+  font-size: var(--texto-chico, 11px);
+}
+
+.camara-boton {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 0;
+  border: 2px solid var(--negro, #000);
+  border-radius: 0;
+  background: var(--blanco, #fff);
+  font: inherit;
+  font-weight: 500;
+  font-size: max(12px, calc(13 * var(--u, 1px)));
+  color: inherit;
+  cursor: pointer;
+}
+
+.camara-tecla {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  background: var(--negro, #000);
+  color: var(--blanco, #fff);
+  font-weight: 800;
+}
+
+.camara-boton[aria-pressed='true'] {
+  background: var(--negro, #000);
+  color: var(--blanco, #fff);
+}
+
+.camara-boton[aria-pressed='true'] .camara-tecla {
+  background: var(--blanco, #fff);
+  color: var(--negro, #000);
+}
+
+.camara-boton:focus-visible {
+  outline: 3px solid var(--negro, #000);
+  outline-offset: 3px;
+}
+
+/* En el pie del panel, a la izquierda del minimapa */
+.camara.camara-en-pie {
+  position: static;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: max(200px, calc(250 * var(--u, 1px)));
+  margin-right: calc(14 * var(--u, 1px));
+  align-items: flex-start;
+}
+
+.camara.camara-en-pie .camara-boton {
+  align-self: flex-start;
+}

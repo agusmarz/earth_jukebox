@@ -1,6 +1,20 @@
-# Demo del mapa sonoro de ríos
+# The Melody of Water, demo del mapa sonoro de ríos
 
 Prototipo para "leer" un río con el mouse. Sirve para cualquier río que tenga sus datos en `datos/`, sin tocar código. Un cuadrado sigue al mouse sobre el mapa. Si toca el río suena fuerte, a medida que se aleja baja el volumen, y el paneo estéreo indica hacia qué lado quedó el río. Es la base para después reemplazar el mouse por la mano.
+
+## Vistas
+
+La interfaz está en inglés y copia los diseños de `earth_jukebox_design` (`welcome.png`, `home.png` y `river_dashboard.png`). Es una sola página con tres vistas, y la dirección cambia con cada una, así funcionan el botón de atrás del navegador y los enlaces directos.
+
+| Vista | Dirección | Cómo se sale |
+| --- | --- | --- |
+| Bienvenida, "The Melody of Water" | `index.html` | Clic en la pestaña de abajo, o Enter, Espacio, flecha derecha o N |
+| Menú de ríos sobre el planisferio | `#rios` | Clic en la etiqueta de un río, o las teclas 1 a 9 y 0 para el décimo. Escape vuelve a la bienvenida |
+| Tablero del río | `#rio/<id>` | Clic en el logo de arriba a la izquierda, o Escape |
+
+Los ríos del menú van numerados de mayor a menor caudal, con su nombre en inglés, según `rios.js`. Un río de `datos/indice.json` que no esté en `rios.js` aparece al final con el nombre de sus datos. Las etiquetas van sobre el punto medio del cauce, y si dos se pisan se separan y una línea las une con su río.
+
+El botón del micrófono, el texto "Say NEXT", la pestaña con el micrófono del menú y el botón Tutorial están dibujados como en el diseño pero todavía no hacen nada. Quedan para los comandos de voz. En el lugar de las dos manos del diseño, abajo a la derecha del tablero, va la cámara del control con las manos. El fondo de colores que sigue al cursor en `river_dashboard.png` tampoco está, y el tablero va sobre fondo blanco.
 
 ## Cómo abrirla
 
@@ -16,20 +30,21 @@ La dirección acepta estos parámetros, y se pueden combinar.
 
 | Parámetro | Qué hace |
 | --- | --- |
-| `?rio=<id>` | Abre ese río. Sin el parámetro abre el primero del índice |
+| `#rio/<id>` | Abre directo el tablero de ese río. La dirección vieja `?rio=<id>` también funciona |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
 | `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
-| `?idioma=en` | Presenta cada río en inglés. Sin el parámetro lo presenta en español |
 | `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca en verano |
 | `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
 
-Por ejemplo http://localhost:8000/?carpeta=pruebas&rio=sintetico&normalizacion=global. La dirección se actualiza sola al cambiar de río o de normalización, así se puede copiar y compartir.
+Por ejemplo http://localhost:8000/?carpeta=pruebas&normalizacion=global#rio/sintetico. La dirección se actualiza sola al cambiar de río o de normalización, así se puede copiar y compartir.
+
+La orquesta empieza a cargarse apenas se abre la bienvenida, así al elegir un río ya suele estar lista y arranca sola, porque el clic en el menú ya habilitó el audio. Si se entra directo a `#rio/<id>`, el tablero pide un clic o una tecla antes de sonar.
 
 Si `datos/` todavía no tiene datos, la portada lo avisa. Mientras tanto se puede probar con `?carpeta=pruebas`.
 
 ## Ríos y datos
 
-El selector de río, debajo del título, lista los ríos de `datos/indice.json`. Se maneja con el mouse o con el teclado (Tab hasta el selector y flechas), y al cambiar de río se anuncia para lectores de pantalla. Al cambiar, se corta lo que estaba sonando y la orquesta arranca de nuevo con el río nuevo. Las capas prendidas y apagadas y la normalización elegida se mantienen.
+En el tablero, además del menú, el selector River del panel lista los ríos de `datos/indice.json`. Se maneja con el mouse o con el teclado (Tab hasta el selector y flechas), y al cambiar de río se anuncia para lectores de pantalla. Al cambiar, se corta lo que estaba sonando y la orquesta arranca de nuevo con el río nuevo. Las capas prendidas y apagadas y la normalización elegida se mantienen.
 
 Cada río es un archivo `datos/<id>.json` con este formato.
 
@@ -46,9 +61,24 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
 
 ## Presentación hablada
 
-Al empezar a escuchar y cada vez que se elige otro río, una voz dice dónde está el río, qué países recorre y cuánto mide. Son voces neuronales pregrabadas, `audios/es/<id>.mp3` (es-AR-ElenaNeural) y `audios/en/<id>.mp3` (en-US-AvaNeural), que genera `scripts/generar_voces.py` con edge-tts junto con `audios/textos.js`. Si un mp3 no carga, `locucion.js` dice el mismo texto con la voz del navegador. Si se cambia de río antes de que termine, la presentación anterior se corta. Mientras habla, la orquesta baja a un quinto de su volumen y vuelve al terminar.
+Al empezar a escuchar y cada vez que se elige otro río, una voz dice en inglés dónde está el río, qué países recorre y cuánto mide. Es una voz neuronal pregrabada, `audios/en/<id>.mp3` (en-US-AvaNeural), que genera `scripts/generar_voces.py` con edge-tts junto con `audios/textos.js`. El script también genera las versiones en castellano de `audios/es/`, que la interfaz ya no usa. Si un mp3 no carga, `locucion.js` dice el mismo texto con la voz del navegador. Si se cambia de río antes de que termine, la presentación anterior se corta. Mientras habla, la orquesta baja a un quinto de su volumen y vuelve al terminar.
 
-El botón L del panel (o la tecla L) alterna entre español e inglés y vuelve a presentar el río en el idioma nuevo. El botón R (o la tecla R) repite la presentación. Solo la presentación cambia de idioma, el resto de la interfaz sigue en español. `locucion.js` usa un elemento de audio y no `fetch`, así que funciona también desde `file://`, aunque el resto de la demo sigue necesitando el servidor local.
+El botón Replay del panel (o la tecla R) repite la presentación. `locucion.js` usa un elemento de audio y no `fetch`, así que funciona también desde `file://`, aunque el resto de la demo sigue necesitando el servidor local.
+
+## Zoom
+
+El tablero arranca con el río entero. La rueda del mouse acerca o aleja el mapa alrededor del cursor, y las teclas + y − hacen lo mismo alrededor del cuadrado. Con 0 se vuelve al río entero. El minimapa de abajo a la derecha muestra el río completo con un rectángulo verde sobre la parte que se ve, y un clic o arrastre sobre él mueve la vista. El zoom no cambia el sonido: el cuadrado sigue midiendo la distancia en píxeles de pantalla.
+
+## Control con las manos
+
+`manos.js` es el port a la web de `manos/Mediapipe.py`, con `@mediapipe/tasks-vision` corriendo en el navegador, sin ningún proceso aparte. El botón Camera del pie del panel (o la tecla C) prende la cámara, y el cuadro muestra la imagen espejada en grises con los esqueletos de las manos, el recuadro punteado de la zona de la mano derecha, el eje del puño izquierdo y un resumen de dedos y giro.
+
+- La mano derecha es la única que mueve el cuadrado. Las esquinas del recuadro punteado van a las esquinas de la parte útil del mapa (`Mapa.areaUtil`, la que no tapan el panel, el logo ni las fuentes), salvo arriba, donde la mano llega hasta el mismo margen que a los costados. Mientras se ve la mano, el mouse no mueve el cuadrado; sin la mano vuelven el mouse y las flechas.
+- Sus cuatro primeros dedos (pulgar, índice, medio y anular) prenden y apagan las capas 1 a 4: dedo levantado, capa prendida. Un dedo tiene que quedarse igual 200 ms para contar. El meñique no hace nada. Si la mano sale de cuadro las capas quedan como estaban.
+- La mano izquierda es la única que cambia la estación, y solo con el puño cerrado. Al cerrarlo aparece un eje que flota con la mano, y cada vuelta completa del puño a su alrededor pasa a la estación siguiente (sentido horario) o a la anterior (antihorario).
+- MediaPipe distingue las manos por su forma y con el puño cerrado suele confundirlas. Por eso una mano conserva su identidad mientras se mueva sin saltos, en cualquier parte de la cámara, y una mano que aparece sola se decide por mayoría de la etiqueta en 5 cuadros (unos 170 ms, en los que todavía no hace nada).
+
+Los parámetros son los de `Mediapipe.py` salvo la sensibilidad, que baja de 2,4 a 1,6 para que la zona de la mano derecha sea más grande (62,5 % del cuadro). La librería se baja de jsDelivr y el modelo se busca en `hand_landmarker.task` (en esta carpeta), en `../../manos/hand_landmarker.task` y si no se baja de Google, así que el control con las manos necesita internet. La cámara solo funciona en `localhost` o con HTTPS, como en GitHub Pages.
 
 ## Estaciones del año
 
@@ -58,7 +88,7 @@ Las estaciones se leen de `datos/estaciones/<id>.json`, que genera el paso estac
 
 ## Normalización
 
-El botón N del panel (o la tecla N) alterna entre dos formas de llevar cada característica a 0 a 1, que es lo que maneja el sonido y el grosor del río en el mapa.
+El botón Scale del panel (o la tecla N) alterna entre dos formas de llevar cada característica a 0 a 1, que es lo que maneja el sonido y el grosor del río en el mapa.
 
 | Modo | Cómo normaliza | Para qué sirve |
 | --- | --- | --- |
@@ -80,7 +110,7 @@ El río suena como una orquesta de instrumentos grabados. Cada característica d
 
 ### Lógica musical
 
-El botón M del panel (o la tecla M) pasa por tres formas de llevar los datos a notas. Lo que está sonando no se corta, el cambio entra en la nota siguiente. Si la orquesta está en fermata, la rearma con las alturas nuevas.
+El botón Music del panel (o la tecla M) pasa por tres formas de llevar los datos a notas. Lo que está sonando no se corta, el cambio entra en la nota siguiente. Si la orquesta está en fermata, la rearma con las alturas nuevas.
 
 | Modo | Melodía (maderas) | Cuerdas | Arpa | Contrabajo |
 | --- | --- | --- | --- | --- |
@@ -120,18 +150,31 @@ Un tramo sin ningún dato no suena, pero con la interpolación ya no queda ningu
 ## Archivos
 
 ```
-index.html, estilos.css   interfaz
+index.html, estilos.css   interfaz, las tres vistas
+app.js                    navegación entre vistas, bienvenida y menú de ríos sobre el planisferio
+rios.js                   orden y nombres en inglés de los ríos del menú, y nombres en inglés de algunas ciudades
+mundo.js                  contorno del planisferio y punto de cada río (lo genera scripts/generar_mundo.py)
 datos/                    un .json por río más indice.json (lo genera el pipeline de scripts/)
 pruebas/                  datos de prueba, con el mismo formato (los genera pruebas/generar_pruebas.py), y experimentos_sonido.js
 tramos.js                 formato viejo del Paraná, la demo ya no lo usa
-mapa.js                   proyección, dibujo y campo de distancias al río (Mapa.cargar arma todo para un río)
+mapa.js                   proyección, zoom, minimapa, dibujo y campo de distancias al río (Mapa.cargar arma todo para un río)
 sonido.js                 sampler y orquesta con Web Audio
 locucion.js               presentación hablada de cada río, con fallback a la voz del navegador y ducking de la orquesta
-audios/                   locuciones es/ y en/ y textos.js (lo genera scripts/generar_voces.py)
-demo.js                   carga de ríos, selectores de río y estación, normalización, cuadrado, panel y teclado
+audios/                   locuciones es/ y en/ y textos.js (lo genera scripts/generar_voces.py), la interfaz usa en/
+demo.js                   tablero del río: carga, selectores de río y estación, normalización, música, zoom, cuadrado, panel y teclado
+manos.js, manos.css       control con las manos por la cámara (MediaPipe en el navegador), y su cuadro en el pie del panel
 muestras/                 grabaciones de VSCO 2 CE e índice (lo genera scripts/preparar_muestras.py)
 fuentes/                  Archivo, copiada de app_video/fuentes
 ```
+
+## Cómo regenerar el planisferio
+
+```bash
+cd scripts
+python generar_mundo.py <ruta a land-50m.json>
+```
+
+`land-50m.json` es el TopoJSON de tierras de Natural Earth (dominio público) del paquete world-atlas, en https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-50m.json. El script proyecta con Miller, saca la Antártida, simplifica el contorno y escribe `mundo.js` (unos 160 KB) con el punto medio del cauce de cada río de `datos/indice.json`. Hay que volver a correrlo al agregar un río, para que tenga su etiqueta en el menú.
 
 ## Cómo regenerar los datos
 

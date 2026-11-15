@@ -1,93 +1,147 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mapa sonoro</title>
+  <title>The Melody of Water</title>
   <link rel="stylesheet" href="estilos.css">
+  <link rel="stylesheet" href="manos.css">
 </head>
 <body>
-  <div id="contenedor-mapa">
-    <canvas id="mapa" aria-label="Mapa del río. Mové el cuadrado con el mouse o las flechas para escuchar el río." role="img"></canvas>
-    <button id="portada" type="button">
-      <span class="portada-titulo">Tocá para escuchar el río</span>
-      <span class="portada-texto">Usá auriculares si podés. El paneo te dice hacia qué lado está el río.</span>
+
+  <!-- 1. Welcome -->
+  <main id="vista-bienvenida" class="vista" aria-labelledby="titulo-bienvenida">
+    <div class="bienvenida-fondo" aria-hidden="true">
+      <svg class="bienvenida-mundo" id="bienvenida-mundo" preserveAspectRatio="xMidYMid slice"></svg>
+    </div>
+    <div class="bienvenida-arco" aria-hidden="true"></div>
+    <div class="trama" aria-hidden="true"></div>
+
+    <button class="boton-microfono" type="button" aria-disabled="true" title="Voice commands are coming soon">
+      <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><use href="#icono-microfono"></use></svg>
+      Activate your microphone
     </button>
-  </div>
 
-  <aside>
-    <h1 id="titulo-rio">Mapa sonoro</h1>
+    <div class="bienvenida-contenido">
+      <h1 id="titulo-bienvenida" class="titulo-gigante">The<br>melody<br>of water</h1>
+      <p class="bienvenida-texto">Welcome! Here you can become the conductor of an orchestra played by the changing bodies of water of our planet over time.</p>
+    </div>
 
-    <label class="selector-rio">
-      <span class="etiqueta">Río</span>
-      <select id="selector-rio" disabled></select>
-    </label>
+    <button id="boton-continuar" class="pestana pestana-continuar" type="button" aria-label="Continue to the rivers">
+      Say <strong>“NEXT”</strong> to continue
+    </button>
+  </main>
 
-    <label class="selector-rio">
-      <span class="etiqueta">Estación</span>
-      <select id="selector-estacion" disabled></select>
-    </label>
-    <p class="bajada">Deslizá el cuadrado por el mapa. Cuando toca el río suena fuerte, y a medida que te alejás baja el volumen. Si lo dejás quieto, la orquesta sostiene el acorde.</p>
+  <!-- 2. Rivers menu -->
+  <main id="vista-rios" class="vista" aria-labelledby="titulo-rios" hidden>
+    <div class="rios-fondo" aria-hidden="true"></div>
+    <div class="trama trama-clara" aria-hidden="true"></div>
 
-    <section class="cercania" aria-hidden="true">
-      <span class="etiqueta">Cercanía al río</span>
-      <span class="pista"><span id="barra-cercania" class="relleno"></span></span>
-      <span id="estado" class="estado">Quieto, la orquesta sostiene el acorde</span>
-    </section>
+    <h1 id="titulo-rios" class="logo logo-claro">The<br>melody<br>of water</h1>
 
-    <section class="tramo">
-      <p id="tramo">Mové el cuadrado sobre el río</p>
-      <p id="detalle" class="detalle"></p>
-    </section>
+    <button class="boton-tutorial" type="button" aria-disabled="true" title="The tutorial is coming soon">
+      <span class="icono-tutorial" aria-hidden="true"><span class="cuadrado"></span><span class="triangulo"></span></span>
+      Tutorial
+    </button>
 
-    <section id="capas" class="capas" aria-label="Instrumentos, uno por característica del río, y el triángulo"></section>
+    <div class="planisferio" id="planisferio">
+      <svg id="rios-mundo" class="rios-mundo" aria-hidden="true"></svg>
+      <nav id="etiquetas-rios" class="etiquetas-rios" aria-label="Choose a river"></nav>
+    </div>
 
-    <section class="capas">
-      <button id="boton-normalizacion" class="capa normalizacion" type="button">
-        <span class="tecla">N</span>
-        <span class="texto">
-          <span class="titulo">Normalización</span>
-          <span class="valor" id="modo-normalizacion">Propia</span>
-          <span class="instrumento" id="detalle-normalizacion">Cada río usa todo el rango sonoro</span>
-        </span>
+    <div class="pestana pestana-voz" aria-hidden="true">
+      <svg class="icono" viewBox="0 0 24 24"><use href="#icono-microfono"></use></svg>
+      <svg class="icono" viewBox="0 0 24 24"><use href="#icono-barras"></use></svg>
+    </div>
+  </main>
+
+  <!-- 3. River dashboard -->
+  <main id="vista-rio" class="vista" aria-labelledby="titulo-rio" hidden>
+    <div id="contenedor-mapa" class="contenedor-mapa">
+      <canvas id="mapa" aria-label="River map. Move the square with the mouse or the arrow keys to listen to the river." role="img"></canvas>
+      <button id="portada" class="portada" type="button">
+        <span class="portada-titulo">Loading the orchestra</span>
+        <span class="portada-texto">Use headphones if you can. The panning tells you which side the river is on.</span>
       </button>
-      <button id="boton-musica" class="capa normalizacion" type="button">
-        <span class="tecla">M</span>
-        <span class="texto">
-          <span class="titulo">Música</span>
-          <span class="valor" id="modo-musica">Original</span>
-          <span class="instrumento" id="detalle-musica">El nivel mueve la melodía, la pendiente la cantidad de notas</span>
-        </span>
-      </button>
-      <button id="boton-idioma" class="capa normalizacion" type="button">
-        <span class="tecla">L</span>
-        <span class="texto">
-          <span class="titulo">Idioma de la presentación</span>
-          <span class="valor"><span id="idioma-es" lang="es">ES</span> / <span id="idioma-en" lang="en">EN</span></span>
-          <span class="instrumento" id="detalle-idioma">Una voz presenta cada río al abrirlo</span>
-        </span>
-      </button>
-      <button id="boton-locucion" class="capa normalizacion" type="button">
-        <span class="tecla">R</span>
-        <span class="texto">
-          <span class="titulo">Repetir presentación</span>
-          <span class="instrumento">Vuelve a decir dónde está el río y cuánto mide</span>
-        </span>
-      </button>
-    </section>
+    </div>
 
-    <p class="ayuda">Mouse o flechas para moverte, Shift para ir más rápido. Teclas 1 a 4 para prender y apagar cada instrumento, N para cambiar la normalización, M para cambiar la lógica de la música, L para cambiar el idioma de la presentación y R para repetirla.</p>
-    <p class="fuente">Datos SWOT de la NASA y el CNES, producto de ríos L2_HR_RiverSP versión D vía Hydrocron, julio de 2023 a noviembre de 2026.</p>
-    <p class="fuente">Instrumentos grabados de VSCO 2 Community Edition de Versilian Studios, licencia CC0.</p>
-  </aside>
+    <button id="boton-volver" class="logo logo-oscuro boton-volver" type="button" aria-label="Back to the rivers (Esc)">
+      The<br>melody<br>of water
+    </button>
+
+    <p class="fuente">SWOT data from NASA and CNES, L2_HR_RiverSP version D via Hydrocron, July 2023 to November 2026. Instruments from VSCO 2 Community Edition by Versilian Studios, CC0.</p>
+
+    <aside class="panel">
+      <h1 id="titulo-rio" class="titulo-rio">River</h1>
+
+      <section id="capas" class="capas" aria-label="Instruments, one per river feature. Keys 1 to 4 turn them on and off"></section>
+
+      <section class="tramo" aria-live="off">
+        <p id="tramo" class="tramo-km">Move the square over the river</p>
+        <p id="detalle" class="tramo-detalle"></p>
+        <div class="cercania" aria-hidden="true">
+          <span class="cercania-etiqueta">Proximity</span>
+          <span class="pista"><span id="barra-cercania" class="relleno"></span></span>
+        </div>
+        <p id="estado" class="solo-lector">Still, the orchestra holds the chord</p>
+      </section>
+
+      <section class="controles" aria-label="Settings">
+        <label class="control-selector">
+          <span class="control-etiqueta">River</span>
+          <select id="selector-rio" disabled></select>
+        </label>
+        <label class="control-selector">
+          <span class="control-etiqueta">Season</span>
+          <select id="selector-estacion" disabled></select>
+        </label>
+        <button id="boton-normalizacion" class="control" type="button">
+          <span class="tecla">N</span>
+          <span class="control-texto"><span class="control-etiqueta">Scale</span><span id="modo-normalizacion">Own</span></span>
+        </button>
+        <button id="boton-musica" class="control" type="button">
+          <span class="tecla">M</span>
+          <span class="control-texto"><span class="control-etiqueta">Music</span><span id="modo-musica">Original</span></span>
+        </button>
+        <button id="boton-locucion" class="control" type="button" title="Replays the spoken intro of the river">
+          <span class="tecla">R</span>
+          <span class="control-texto"><span class="control-etiqueta">Replay</span><span>Intro</span></span>
+        </button>
+      </section>
+
+      <p id="detalle-modos" class="solo-lector"></p>
+
+      <div class="pie-panel">
+        <canvas id="minimapa" class="minimapa" width="150" height="112" aria-label="Overview of the whole river. Click to move the view." role="img"></canvas>
+      </div>
+    </aside>
+  </main>
 
   <div id="anuncios" class="solo-lector" aria-live="polite"></div>
 
+  <!-- Íconos -->
+  <svg width="0" height="0" class="solo-lector" aria-hidden="true">
+    <symbol id="icono-microfono" viewBox="0 0 24 24">
+      <rect x="8.5" y="2" width="7" height="12.5" rx="3.5" fill="currentColor"/>
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 17.5V21.5M8.5 21.5h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icono-barras" viewBox="0 0 24 24">
+      <rect x="3.5" y="4" width="3.4" height="16" rx="1.2" fill="currentColor"/>
+      <rect x="10.3" y="8" width="3.4" height="12" rx="1.2" fill="currentColor"/>
+      <rect x="17.1" y="11" width="3.4" height="9" rx="1.2" fill="currentColor"/>
+    </symbol>
+  </svg>
+
+  <script src="rios.js"></script>
+  <script src="mundo.js"></script>
   <script src="mapa.js"></script>
   <script src="muestras/indice.js"></script>
   <script src="sonido.js"></script>
   <script src="audios/textos.js"></script>
   <script src="locucion.js"></script>
   <script src="demo.js"></script>
+  <script src="app.js"></script>
+  <script src="manos.js"></script>
 </body>
 </html>
