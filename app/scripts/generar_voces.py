@@ -16,6 +16,8 @@ from pathlib import Path
 
 import edge_tts
 
+from textos_ui import TEXTOS_UI
+
 CARPETA_DEMO = Path(__file__).resolve().parent.parent / "demo"
 CARPETA_SALIDA = CARPETA_DEMO / "audios"
 
@@ -61,12 +63,12 @@ def ids_de_la_demo():
     return [rio["id"] for rio in indice["rios"]]
 
 
-async def generar(texto, voz, destino):
+async def generar(texto, voz, destino, minimo=TAMANO_MINIMO):
     temporal = destino.with_suffix(".tmp")
     for intento in range(1, REINTENTOS + 1):
         try:
             await edge_tts.Communicate(texto, voz).save(str(temporal))
-            if temporal.stat().st_size < TAMANO_MINIMO:
+            if temporal.stat().st_size < minimo:
                 raise RuntimeError(f"salió muy chico ({temporal.stat().st_size} bytes)")
             temporal.replace(destino)
             return
@@ -79,7 +81,8 @@ async def generar(texto, voz, destino):
 
 def escribir_textos_js():
     """Los textos como script y no como JSON, así la demo los lee también desde file://"""
-    contenido = json.dumps({"voces": VOCES, "textos": TEXTOS}, ensure_ascii=False, indent=2)
+    # "ui" son las locuciones de la interfaz (textos_ui.py, mp3 de generar_voces_ui.py)
+    contenido = json.dumps({"voces": VOCES, "textos": TEXTOS, "ui": TEXTOS_UI}, ensure_ascii=False, indent=2)
     destino = CARPETA_SALIDA / "textos.js"
     destino.write_text(
         "// Lo genera scripts/generar_voces.py, no editar a mano.\n"

@@ -1,0 +1,79 @@
+/* Comandos de voz (voz.js): botón del micrófono, pestaña del menú e indicador de lo que escucha */
+
+.boton-microfono {
+  cursor: pointer;
+}
+
+.boton-microfono[aria-pressed="true"] {
+  border-color: var(--verde-marca);
+  color: var(--verde-marca);
+}
+
+.boton-microfono[aria-pressed="true"] .icono {
+  animation: voz-latido 1.6s ease-in-out infinite;
+}
+
+.pestana-voz {
+  cursor: pointer;
+}
+
+.pestana-voz.escuchando .icono-barras {
+  color: var(--verde-marca);
+  animation: voz-latido 0.8s ease-in-out infinite;
+}
+
+.voz-indicador {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--negro);
+  color: var(--blanco);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.voz-indicador[hidden] {
+  display: none;
+}
+
+.voz-indicador .icono {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.voz-indicador #voz-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voz-indicador[data-estado="escuchando"] .icono {
+  color: var(--verde-marca);
+  animation: voz-latido 0.8s ease-in-out infinite;
+}
+
+.voz-indicador[data-estado="error"] {
+  background: #5a5a5a;
+}
+
+@keyframes voz-latido {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton-microfono[aria-pressed="true"] .icono,
+  .pestana-voz.escuchando .icono-barras,
+  .voz-indicador[data-estado="escuchando"] .icono {
+    animation: none;
+  }
+}

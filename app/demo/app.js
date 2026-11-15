@@ -3,8 +3,8 @@
 //   #rios        menú de ríos sobre el planisferio
 //   #rio/<id>    tablero del río (demo.js)
 // La dirección vieja ?rio=<id> abre directo el tablero de ese río.
-// Todo se maneja con mouse y teclado. Los botones de micrófono, voz, manos y tutorial están
-// dibujados como en el diseño pero todavía no hacen nada.
+// Se maneja con mouse, teclado y comandos de voz (voz.js, con la barra espaciadora apretada).
+// El botón Tutorial todavía no hace nada.
 
 (function () {
   const SVG = 'http://www.w3.org/2000/svg';
@@ -135,7 +135,7 @@
     } else if (vista === 'rios') {
       document.title = 'Rivers · The Melody of Water';
       ubicarEtiquetas();
-      anuncios.textContent = 'Choose a river. Keys 1 to 9 and 0, or Tab and Enter.';
+      anuncios.textContent = 'Choose a river. Keys 1 to 9 and 0, or Tab and Enter, or hold Space and say its name.';
     } else if (vista === 'rio') {
       window.Tablero.abrir(id);
     }
@@ -148,6 +148,13 @@
     else history.pushState(null, '', direccion);
     mostrar();
   }
+
+  // Para los comandos de voz (voz.js)
+  window.App = {
+    ir,
+    get vista() { return vistaActual; },
+    get rios() { return rios; },
+  };
 
   window.addEventListener('popstate', mostrar);
   window.addEventListener('hashchange', mostrar);
@@ -167,7 +174,8 @@
     // demo.js escucha antes; si la tecla ya cambió de vista (Escape en el tablero) no se usa de nuevo
     if (evento.defaultPrevented || evento.ctrlKey || evento.metaKey || evento.altKey) return;
     if (vistaActual === 'bienvenida') {
-      if (['Enter', ' ', 'ArrowRight'].includes(evento.key) || evento.key.toLowerCase() === 'n') {
+      // El Espacio no: mantenerlo apretado es para hablar (voz.js)
+      if (['Enter', 'ArrowRight'].includes(evento.key) || evento.key.toLowerCase() === 'n') {
         evento.preventDefault();
         ir('rios');
       }

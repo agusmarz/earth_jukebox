@@ -87,6 +87,7 @@
   // Ganancia maestra, y cuánto baja (en veces) mientras habla la locución de presentación del río
   const GANANCIA_MAESTRA = 1.5;
   const ATENUACION_LOCUCION = 0.2;
+  const pedidosAtenuar = new Map(); // motivo → nivel, ver atenuar()
   // Cómo se resumen varios tramos cruzados en una misma semicorchea. Pendiente y amplitud toman
   // el máximo para que un pico no se pierda entre tramos comunes.
   const RESUMEN = { ancho: 'promedio', nivel: 'promedio', pendiente: 'maximo', amplitud: 'maximo' };
@@ -757,12 +758,15 @@
       });
     },
 
-    // Ducking. true baja la orquesta para que se entienda la locución, false la devuelve. Si el
-    // motor todavía no arrancó no hace nada, y arranca a volumen normal.
-    atenuar(activo) {
+    // Ducking. true baja la orquesta, false la devuelve. Puede haber varios pedidos a la vez, cada
+    // uno con su motivo (la locución, o voz.js mientras escucha un comando) y su nivel, y manda el
+    // más bajo. Si el motor todavía no arrancó solo se anota el pedido.
+    atenuar(activo, motivo = 'locucion', nivel = ATENUACION_LOCUCION) {
+      if (activo) pedidosAtenuar.set(motivo, nivel);
+      else pedidosAtenuar.delete(motivo);
       if (!nodos) return;
-      const destino = activo ? GANANCIA_MAESTRA * ATENUACION_LOCUCION : GANANCIA_MAESTRA;
-      nodos.maestro.gain.setTargetAtTime(destino, contexto.currentTime, activo ? 0.12 : 0.5);
+      const factor = Math.min(1, ...pedidosAtenuar.values());
+      nodos.maestro.gain.setTargetAtTime(GANANCIA_MAESTRA * factor, contexto.currentTime, activo ? 0.08 : 0.5);
     },
 
     detener() {

@@ -6,6 +6,7 @@
   <title>The Melody of Water</title>
   <link rel="stylesheet" href="estilos.css">
   <link rel="stylesheet" href="manos.css">
+  <link rel="stylesheet" href="voz.css">
 </head>
 <body>
 
@@ -17,9 +18,9 @@
     <div class="bienvenida-arco" aria-hidden="true"></div>
     <div class="trama" aria-hidden="true"></div>
 
-    <button class="boton-microfono" type="button" aria-disabled="true" title="Voice commands are coming soon">
+    <button class="boton-microfono" type="button" aria-pressed="false" title="Listen for voice commands without a key on this screen and in the river menu. You can always hold Space and speak.">
       <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><use href="#icono-microfono"></use></svg>
-      Activate your microphone
+      <span class="texto-microfono">Activate your microphone</span>
     </button>
 
     <div class="bienvenida-contenido">
@@ -49,10 +50,10 @@
       <nav id="etiquetas-rios" class="etiquetas-rios" aria-label="Choose a river"></nav>
     </div>
 
-    <div class="pestana pestana-voz" aria-hidden="true">
-      <svg class="icono" viewBox="0 0 24 24"><use href="#icono-microfono"></use></svg>
-      <svg class="icono" viewBox="0 0 24 24"><use href="#icono-barras"></use></svg>
-    </div>
+    <button class="pestana pestana-voz" type="button" aria-label="Speak a command. You can also hold Space and speak." title="Click and speak, or hold Space and speak">
+      <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><use href="#icono-microfono"></use></svg>
+      <svg class="icono icono-barras" viewBox="0 0 24 24" aria-hidden="true"><use href="#icono-barras"></use></svg>
+    </button>
   </main>
 
   <!-- 3. River dashboard -->
@@ -119,6 +120,12 @@
 
   <div id="anuncios" class="solo-lector" aria-live="polite"></div>
 
+  <!-- Comandos de voz: qué está escuchando (voz.js). Las respuestas se dicen en voz alta. -->
+  <div id="voz-indicador" class="voz-indicador" aria-hidden="true" hidden>
+    <svg class="icono" viewBox="0 0 24 24"><use href="#icono-microfono"></use></svg>
+    <span id="voz-texto"></span>
+  </div>
+
   <!-- Íconos -->
   <svg width="0" height="0" class="solo-lector" aria-hidden="true">
     <symbol id="icono-microfono" viewBox="0 0 24 24">
@@ -143,5 +150,8 @@
   <script src="demo.js"></script>
   <script src="app.js"></script>
   <script src="manos.js"></script>
+  <script src="voz_alias.js"></script>
+  <script src="voz_intenciones.js"></script>
+  <script src="voz.js"></script>
 </body>
 </html>

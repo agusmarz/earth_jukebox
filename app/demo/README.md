@@ -8,13 +8,13 @@ La interfaz está en inglés y copia los diseños de `earth_jukebox_design` (`we
 
 | Vista | Dirección | Cómo se sale |
 | --- | --- | --- |
-| Bienvenida, "The Melody of Water" | `index.html` | Clic en la pestaña de abajo, o Enter, Espacio, flecha derecha o N |
+| Bienvenida, "The Melody of Water" | `index.html` | Clic en la pestaña de abajo, Enter, flecha derecha o N, o decir "next" con el Espacio apretado |
 | Menú de ríos sobre el planisferio | `#rios` | Clic en la etiqueta de un río, o las teclas 1 a 9 y 0 para el décimo. Escape vuelve a la bienvenida |
 | Tablero del río | `#rio/<id>` | Clic en el logo de arriba a la izquierda, o Escape |
 
 Los ríos del menú van numerados de mayor a menor caudal, con su nombre en inglés, según `rios.js`. Un río de `datos/indice.json` que no esté en `rios.js` aparece al final con el nombre de sus datos. Las etiquetas van sobre el punto medio del cauce, y si dos se pisan se separan y una línea las une con su río.
 
-El botón del micrófono, el texto "Say NEXT", la pestaña con el micrófono del menú y el botón Tutorial están dibujados como en el diseño pero todavía no hacen nada. Quedan para los comandos de voz. En el lugar de las dos manos del diseño, abajo a la derecha del tablero, va la cámara del control con las manos. El fondo de colores que sigue al cursor en `river_dashboard.png` tampoco está, y el tablero va sobre fondo blanco.
+El botón Tutorial está dibujado como en el diseño pero todavía no hace nada. El botón del micrófono y la pestaña del micrófono del menú son de los comandos de voz (ver más abajo). En el lugar de las dos manos del diseño, abajo a la derecha del tablero, va la cámara del control con las manos. El fondo de colores que sigue al cursor en `river_dashboard.png` tampoco está, y el tablero va sobre fondo blanco.
 
 ## Cómo abrirla
 
@@ -64,6 +64,16 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
 Al empezar a escuchar y cada vez que se elige otro río, una voz dice en inglés dónde está el río, qué países recorre y cuánto mide. Es una voz neuronal pregrabada, `audios/en/<id>.mp3` (en-US-AvaNeural), que genera `scripts/generar_voces.py` con edge-tts junto con `audios/textos.js`. El script también genera las versiones en castellano de `audios/es/`, que la interfaz ya no usa. Si un mp3 no carga, `locucion.js` dice el mismo texto con la voz del navegador. Si se cambia de río antes de que termine, la presentación anterior se corta. Mientras habla, la orquesta baja a un quinto de su volumen y vuelve al terminar.
 
 El botón Replay del panel (o la tecla R) repite la presentación. `locucion.js` usa un elemento de audio y no `fetch`, así que funciona también desde `file://`, aunque el resto de la demo sigue necesitando el servidor local.
+
+## Comandos de voz
+
+Al abrir la página en la bienvenida, una voz explica que se habla con la barra espaciadora apretada, y a la vez el navegador pide permiso para usar el micrófono. Chrome no deja sonar nada hasta el primer clic o tecla en un sitio que no se visitó seguido: en ese caso la ventana del permiso aparece igual, y el mensaje suena con el primer clic o tecla (si es el Espacio, directamente escucha). Con la barra espaciadora apretada se habla, y al soltarla la app hace lo pedido y lo confirma en voz alta. Por ejemplo "next", "go to the Paraná river", "quiero ir al paraná", "el siete", "width off", "winter", "global scale", "two octaves", "zoom in", "whole river", "repeat", "status", "help" o "menu". Un toque corto del Espacio no hace nada. Mientras escucha, la orquesta casi se apaga. La pestaña del micrófono del menú escucha una frase con un clic, y el botón "Activate your microphone" de la bienvenida, además, escucha sin tecla en la bienvenida y en el menú, salvo mientras habla una locución.
+
+- `voz.js` escucha con la Web Speech API del navegador, en inglés (`en-US`). Anda en Chrome y Edge, con internet: en Chrome el audio lo procesa Google y en Edge Microsoft. Firefox no la tiene, y avisa que use el teclado.
+- `voz_intenciones.js` convierte la frase en una acción. Compara cada parte de la frase con los alias de `voz_alias.js`, exactos o parecidos (distancia de edición sobre el texto y sobre una clave fonética), en inglés y castellano. Un número suelto elige un río en el menú y una capa en el tablero ("river seven" es un río también en el tablero). Un río parecido pero no seguro se confirma ("Did you mean the Ganges? Say yes or no"), y lo que no se entiende responde "Sorry, I didn't catch that". Las pruebas están en `pruebas/intenciones.test.mjs` (`node --test pruebas/`).
+- Las acciones son las mismas que las de las teclas: `App.ir` de `app.js` y `Tablero.acciones` de `demo.js`. Las teclas no responden en voz alta, solo los comandos hablados.
+- Las respuestas son mp3 de `audios/en/ui/` que genera `scripts/generar_voces_ui.py` (textos en `scripts/textos_ui.py`), y suenan con `Locucion.decir()`. Ver `audios/README.md`.
+- Para probar sin micrófono, en la consola del navegador: `Voz.probar('go to the parana river')`. La consola también muestra (en el nivel de detalle) qué se transcribió y qué acción eligió.
 
 ## Zoom
 

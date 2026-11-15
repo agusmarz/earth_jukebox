@@ -554,6 +554,17 @@
     anunciar(ESTACIONES[estacionActual], true);
   });
 
+  // Elige una estación sin pasar por el selector (comandos de voz). false si el río no la tiene.
+  function fijarEstacion(clave) {
+    if (!estacionesRio || !estacionesRio[clave]) return false;
+    estacionActual = clave;
+    elementos.selectorEstacion.value = clave;
+    aplicarEstacion();
+    actualizarDireccion();
+    anunciar(ESTACIONES[estacionActual], true);
+    return true;
+  }
+
   // 7. Normalización. Cada tramo trae las dos y tramo.norma apunta a la elegida, que es lo que
   // leen el dibujo y el sonido. Lo que está sonando no se corta, el cambio entra en la nota siguiente.
   function mostrarModos() {
@@ -809,6 +820,58 @@
     cargarOrquesta() {
       if (!orquestaListaPromesa) orquestaListaPromesa = cargarOrquesta();
       return orquestaListaPromesa;
+    },
+    // Lo mismo que hacen las teclas, para los comandos de voz (voz.js) u otros controles
+    acciones: {
+      iniciar,
+      get iniciado() { return iniciado; },
+      get orquestaLista() { return orquestaLista; },
+      // Capa 1 a 4. estado 'on', 'off' o null para alternar. Devuelve si quedó prendida.
+      fijarCapa(numero, estado) {
+        const capa = CAPAS[numero - 1];
+        if (!capa) return null;
+        const activa = () => filasCapas[capa.nombre].boton.getAttribute('aria-pressed') === 'true';
+        if (!estado || (estado === 'on') !== activa()) alternar(capa);
+        return activa();
+      },
+      fijarEstacion,
+      // 'propia', 'global' o null para alternar. Devuelve la que quedó.
+      fijarNormalizacion(modo) {
+        if (!modo || modo !== modoNormalizacion) alternarNormalizacion();
+        return modoNormalizacion;
+      },
+      // Una de MODOS_MUSICA, o null para pasar a la siguiente. Devuelve la que quedó.
+      fijarMusica(modo) {
+        if (!modo || !MODOS_MUSICA[modo]) {
+          alternarMusica();
+        } else if (modo !== modoMusica) {
+          const nombres = Object.keys(MODOS_MUSICA);
+          // alternarMusica pasa a la siguiente; se cae justo en la pedida
+          modoMusica = nombres[(nombres.indexOf(modo) - 1 + nombres.length) % nombres.length];
+          alternarMusica();
+        }
+        return modoMusica;
+      },
+      repetirPresentacion,
+      // 'in', 'out' o 'reset' (el río entero), como + − y 0
+      zoom(direccion) {
+        if (direccion === 'in') zoomEn(PASO_ZOOM, cursor.x, cursor.y);
+        else if (direccion === 'out') zoomEn(1 / PASO_ZOOM, cursor.x, cursor.y);
+        else if (window.Mapa.cargado) zoomEn(1 / window.Mapa.zoom);
+      },
+      estado() {
+        return {
+          rio: rioActual,
+          capas: CAPAS.map((capa) => ({
+            numero: Number(capa.tecla),
+            titulo: capa.titulo,
+            activa: filasCapas[capa.nombre].boton.getAttribute('aria-pressed') === 'true',
+          })),
+          estacion: estacionDelRio(),
+          normalizacion: modoNormalizacion,
+          musica: modoMusica,
+        };
+      },
     },
     alVolver(funcion) { callbacks.alVolver = funcion; },
     alCambiarRio(funcion) { callbacks.alCambiarRio = funcion; },
