@@ -6,6 +6,10 @@ La app arranca con un mapa Mercator con cinco pines (Mississippi, Amazonas, Cong
 
 Los cinco pines son los ríos que recorre el video de la NASA. Aparte, en [datos_swot_parana](datos_swot_parana/README.md) están los datos SWOT de diez ríos, aproximadamente los de mayor caudal medio del mundo sin contar afluentes: Amazonas, Congo, Ganges, Orinoco, Yangtsé, Yenisei, Paraná, Lena, Mississippi y Mekong. El criterio y sus salvedades están en [Qué ríos hay y por qué](datos_swot_parana/README.md#qué-ríos-hay-y-por-qué). Esos datos alimentan la demo del mapa sonoro (`datos_swot_parana/demo/`) y todavía no están conectados a la app.
 
+## Demo publicada
+
+El mapa sonoro de ríos está publicado en https://agusmarz.github.io/earth_jukebox/ (Chrome o Edge, mejor con auriculares). Se publica con `.github/workflows/deploy-demo.yml` al pushear un tag `demo-v*`, por ejemplo `git tag -a demo-v2 -m "..." && git push origin demo-v2`. Solo se publica `datos_swot_parana/demo/`, sin `pruebas/`, `README.md` ni `tramos.js`.
+
 ## Cómo correrla
 
 No necesita instalar nada más que Python, que se usa como servidor local. Hace falta un servidor porque los navegadores no dejan usar el micrófono ni cargar módulos desde un archivo abierto con doble clic.
