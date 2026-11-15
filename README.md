@@ -4,6 +4,8 @@ Propuesta para el desafío The Earth Information Jukebox del NASA Space Apps Cha
 
 La app arranca con un mapa Mercator con cinco pines (Mississippi, Amazonas, Congo, Ganges y Yangtsé). La voz de la app enumera las opciones, el usuario dice el nombre o el número del río, y la app muestra el tramo del video correspondiente mientras suena la sonificación.
 
+Los cinco pines son los ríos que recorre el video de la NASA. Aparte, en [datos_swot_parana](datos_swot_parana/README.md) están los datos SWOT de diez ríos, aproximadamente los de mayor caudal medio del mundo sin contar afluentes: Amazonas, Congo, Ganges, Orinoco, Yangtsé, Yenisei, Paraná, Lena, Mississippi y Mekong. El criterio y sus salvedades están en [Qué ríos hay y por qué](datos_swot_parana/README.md#qué-ríos-hay-y-por-qué). Esos datos alimentan la demo del mapa sonoro (`datos_swot_parana/demo/`) y todavía no están conectados a la app.
+
 ## Cómo correrla
 
 No necesita instalar nada más que Python, que se usa como servidor local. Hace falta un servidor porque los navegadores no dejan usar el micrófono ni cargar módulos desde un archivo abierto con doble clic.
