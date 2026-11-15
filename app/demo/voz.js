@@ -524,11 +524,18 @@
   }
 
   // 8. La cámara (manos.js). En la bienvenida, al prenderse pide el "next", y si falla dice por qué
-  window.addEventListener('camara', (evento) => {
+  // Habla cuando el sonido de ambiente de la carga (ambiente.js) ya se apagó: el silencio es la señal
+  // de que la cámara cargó, y la voz lo confirma
+  window.addEventListener('camara', async (evento) => {
     const { estado, error } = evento.detail;
     if (window.App.vista !== 'bienvenida') return;
-    if (estado === 'prendida') {
+    if (estado === 'prendiendo') {
       introPendiente = false;
+      return;
+    }
+    if (window.Ambiente) await window.Ambiente.alTerminar();
+    if (window.App.vista !== 'bienvenida' || (window.Manos && window.Manos.activa !== (estado === 'prendida'))) return;
+    if (estado === 'prendida') {
       decir('camara_activada');
     } else if (estado === 'error') {
       decir(error === 'permiso' ? 'camara_error_permiso' : error === 'sin_camara' ? 'camara_error_sin_camara' : 'camara_error');

@@ -112,14 +112,19 @@ NAVEGACION = {
         # bienvenida no se pasa sin la cámara: el "next" recién se pide en camara_activada
         "inicio": (
             "Welcome to The Melody of Water. You will play the rivers with your hands, so first, "
-            "press the C key to turn on the camera. If your browser asks for the camera or the microphone, allow it."
+            "press the C key to turn on the camera. If your browser asks for the camera or the microphone, allow it. "
+            "The camera takes a few seconds to load, and that's normal, so please wait. "
+            "While it loads you will hear a soft water sound. When the sound stops, the camera is ready."
         ),
         # Ayuda de la bienvenida; voz.js le agrega camara_pedir o decir_next según la cámara
         "vista_bienvenida": (
             "Welcome to The Melody of Water, where satellite data from the great rivers of the world "
             "becomes orchestral music. Hold the space bar while you speak, or say help at any time."
         ),
-        "camara_pedir": "First, press the C key to turn on the camera.",
+        "camara_pedir": (
+            "First, press the C key to turn on the camera. It takes a few seconds: "
+            "when the water sound stops, the camera is ready."
+        ),
         "camara_activada": (
             "The camera is on. Now press and hold the space bar, say next, and release it to continue."
         ),
@@ -188,14 +193,19 @@ NAVEGACION = {
     "es": {
         "inicio": (
             "Bienvenido a The Melody of Water. Vas a tocar los ríos con tus manos, así que primero "
-            "presiona la tecla C para prender la cámara. Si el navegador pide permiso para la cámara o el micrófono, acéptalo."
+            "presiona la tecla C para prender la cámara. Si el navegador pide permiso para la cámara o el micrófono, acéptalo. "
+            "La cámara tarda algunos segundos en cargar, y es normal, así que espera un poco. "
+            "Mientras carga vas a escuchar un suave sonido de agua. Cuando deje de sonar, la cámara está lista."
         ),
         "vista_bienvenida": (
             "Bienvenido a The Melody of Water, donde los datos satelitales de los grandes ríos del mundo "
             "se convierten en música orquestal. Mantén apretada la barra espaciadora mientras hablas, "
             "o di ayuda en cualquier momento."
         ),
-        "camara_pedir": "Primero presiona la tecla C para prender la cámara.",
+        "camara_pedir": (
+            "Primero presiona la tecla C para prender la cámara. Tarda algunos segundos: "
+            "cuando deje de sonar el agua, la cámara está lista."
+        ),
         "camara_activada": (
             "La cámara está prendida. Ahora mantén apretada la barra espaciadora, di siguiente y suéltala para continuar."
         ),
