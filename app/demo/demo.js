@@ -2,8 +2,8 @@
 // Si el cuadrado toca el río suena fuerte, si se aleja baja el volumen, y el paneo indica
 // hacia qué lado quedó el río.
 // Los ríos se leen de CARPETA_DATOS/indice.json y CARPETA_DATOS/<id>.json. La dirección acepta
-// ?rio=<id>, ?normalizacion=global, ?musica=dos_octavas, ?estacion=invierno y ?carpeta=pruebas (para usar los
-// datos de demo/pruebas). Las estaciones, si el río las tiene, están en CARPETA_DATOS/estaciones/<id>.json.
+// ?rio=<id>, ?normalizacion=global, ?musica=dos_octavas, ?estacion=invierno, ?idioma=en (idioma de la
+// presentación hablada de cada río) y ?carpeta=pruebas (para usar los datos de demo/pruebas). Las estaciones, si el río las tiene, están en CARPETA_DATOS/estaciones/<id>.json.
 
 (function () {
   const CARPETA_DATOS = 'datos';
@@ -14,6 +14,13 @@
   };
   // Lógicas musicales de sonido.js, en el orden en que se recorren con la tecla M
   const TECLA_MUSICA = 'm';
+  // Presentación hablada de cada río (locucion.js), en español o en inglés
+  const TECLA_IDIOMA = 'l';
+  const TECLA_REPETIR = 'r';
+  const IDIOMAS = {
+    es: { titulo: 'Español', detalle: 'Una voz presenta cada río al abrirlo, en español' },
+    en: { titulo: 'Inglés', detalle: 'Una voz presenta cada río al abrirlo, en inglés' },
+  };
   const MODOS_MUSICA = {
     original: { titulo: 'Original', detalle: 'El nivel mueve la melodía, la pendiente la cantidad de notas' },
     dos_octavas: { titulo: 'Dos octavas', detalle: 'Nivel y pendiente recorren dos octavas, de re a re y de la a la' },
@@ -68,6 +75,10 @@
     botonMusica: document.getElementById('boton-musica'),
     modoMusica: document.getElementById('modo-musica'),
     detalleMusica: document.getElementById('detalle-musica'),
+    botonIdioma: document.getElementById('boton-idioma'),
+    detalleIdioma: document.getElementById('detalle-idioma'),
+    marcasIdioma: { es: document.getElementById('idioma-es'), en: document.getElementById('idioma-en') },
+    botonLocucion: document.getElementById('boton-locucion'),
     tramo: document.getElementById('tramo'),
     detalle: document.getElementById('detalle'),
     barraCercania: document.getElementById('barra-cercania'),
@@ -94,6 +105,7 @@
   const carpetaDatos = nombreSimple(parametros.get('carpeta')) || CARPETA_DATOS;
   let modoNormalizacion = parametros.get('normalizacion') === 'global' ? 'global' : 'propia';
   let modoMusica = MODOS_MUSICA[parametros.get('musica')] ? parametros.get('musica') : 'original';
+  let idiomaActual = IDIOMAS[parametros.get('idioma')] ? parametros.get('idioma') : 'es';
   let rioActual = null;
   let rios = [];
   let pedidoRio = 0;
@@ -364,6 +376,8 @@
     else nueva.delete('musica');
     if (estacionDelRio()) nueva.set('estacion', estacionDelRio());
     else nueva.delete('estacion');
+    if (idiomaActual !== 'es') nueva.set('idioma', idiomaActual);
+    else nueva.delete('idioma');
     history.replaceState(null, '', `${location.pathname}?${nueva}`);
   }
 
@@ -401,8 +415,13 @@
   elementos.selector.addEventListener('change', async () => {
     const id = elementos.selector.value;
     const nombre = elementos.selector.selectedOptions[0].textContent;
+    // Si se cambia rápido de río, la presentación del anterior se corta enseguida
+    window.Locucion.detener();
     try {
-      if (await cargarRio(id)) anunciar(`Río ${nombre}`, true);
+      if (await cargarRio(id)) {
+        anunciar(`Río ${nombre}`, true);
+        presentarRio();
+      }
     } catch (error) {
       elementos.selector.value = rioActual;
       elementos.detalle.textContent = `${error.titulo || 'No se pudo cargar el río'}. ${error.message}`;
@@ -535,6 +554,43 @@
   window.Sonido.fijarMusica(modoMusica);
   mostrarMusica();
 
+  // 7c. Presentación hablada del río. Suena al empezar a escuchar y cada vez que se abre un río, y
+  // mientras habla la orquesta baja (locucion.js le pide a sonido.js que atenúe la ganancia maestra).
+  function presentarRio() {
+    if (iniciado && rioActual) window.Locucion.reproducirPresentacionRio(rioActual, idiomaActual);
+  }
+
+  function mostrarIdioma() {
+    const otro = idiomaActual === 'es' ? 'en' : 'es';
+    for (const [clave, marca] of Object.entries(elementos.marcasIdioma)) {
+      marca.classList.toggle('idioma-activo', clave === idiomaActual);
+    }
+    elementos.detalleIdioma.textContent = IDIOMAS[idiomaActual].detalle;
+    elementos.botonIdioma.setAttribute(
+      'aria-label', `Idioma de la presentación, ${IDIOMAS[idiomaActual].titulo.toLowerCase()}. Tecla L para pasar a ${IDIOMAS[otro].titulo.toLowerCase()}`,
+    );
+  }
+
+  // Al cambiar el idioma se vuelve a presentar el río, así se escucha el cambio
+  function alternarIdioma() {
+    idiomaActual = idiomaActual === 'es' ? 'en' : 'es';
+    mostrarIdioma();
+    if (rioActual) actualizarDireccion();
+    presentarRio();
+  }
+
+  function repetirPresentacion() {
+    if (!iniciado) {
+      iniciar();
+      return;
+    }
+    presentarRio();
+  }
+
+  elementos.botonIdioma.addEventListener('click', alternarIdioma);
+  elementos.botonLocucion.addEventListener('click', repetirPresentacion);
+  mostrarIdioma();
+
   // 8. Carga inicial de la orquesta y del primer río. Todo se lee con fetch, así que hace falta
   // un servidor local.
   const tituloPortada = portada.querySelector('.portada-titulo');
@@ -573,7 +629,8 @@
     dentroDelMapa = true;
     await window.Sonido.iniciar();
     indiceAnterior = -1;
-    anunciar('Mové el mouse o las flechas por el mapa. Teclas 1 a 4 para prender y apagar instrumentos, N para cambiar la normalización, M para cambiar la música.', true);
+    presentarRio();
+    anunciar('Mové el mouse o las flechas por el mapa. Teclas 1 a 4 para prender y apagar instrumentos, N para cambiar la normalización, M para cambiar la música, L para el idioma de la presentación y R para repetirla.', true);
   }
 
   lienzo.addEventListener('pointermove', (evento) => {
@@ -605,6 +662,14 @@
     }
     if (evento.key.toLowerCase() === TECLA_MUSICA && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
       alternarMusica();
+      return;
+    }
+    if (evento.key.toLowerCase() === TECLA_IDIOMA && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
+      alternarIdioma();
+      return;
+    }
+    if (evento.key.toLowerCase() === TECLA_REPETIR && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
+      repetirPresentacion();
       return;
     }
     const paso = evento.shiftKey ? PASO_FLECHA * 5 : PASO_FLECHA;

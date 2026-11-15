@@ -84,6 +84,9 @@
     fagot: 0.85, clarinete: 0.72, oboe: 0.72, flauta: 0.8, corno: 0.32, timbal: 0.2,
   };
 
+  // Ganancia maestra, y cuánto baja (en veces) mientras habla la locución de presentación del río
+  const GANANCIA_MAESTRA = 1.5;
+  const ATENUACION_LOCUCION = 0.2;
   // Cómo se resumen varios tramos cruzados en una misma semicorchea. Pendiente y amplitud toman
   // el máximo para que un pico no se pierda entre tramos comunes.
   const RESUMEN = { ancho: 'promedio', nivel: 'promedio', pendiente: 'maximo', amplitud: 'maximo' };
@@ -214,7 +217,7 @@
 
   function crearGrafo() {
     const maestro = contexto.createGain();
-    maestro.gain.value = 1.5;
+    maestro.gain.value = GANANCIA_MAESTRA;
     const compresor = contexto.createDynamicsCompressor();
     compresor.threshold.value = -14;
     compresor.ratio.value = 3;
@@ -279,7 +282,7 @@
     });
 
     return {
-      cercania, distancia, paneo, seco, envioReverb, filtroCuerdas, vocesCuerdas, filtroFermata, vocesFermata,
+      maestro, cercania, distancia, paneo, seco, envioReverb, filtroCuerdas, vocesCuerdas, filtroFermata, vocesFermata,
     };
   }
 
@@ -752,6 +755,14 @@
       tocar('arpa', prendida ? 81 : 57, contexto.currentTime, {
         destino: contexto.destination, volumen: 0.6, ataque: 0.003, duracion: 0.8, liberacion: 0.6,
       });
+    },
+
+    // Ducking. true baja la orquesta para que se entienda la locución, false la devuelve. Si el
+    // motor todavía no arrancó no hace nada, y arranca a volumen normal.
+    atenuar(activo) {
+      if (!nodos) return;
+      const destino = activo ? GANANCIA_MAESTRA * ATENUACION_LOCUCION : GANANCIA_MAESTRA;
+      nodos.maestro.gain.setTargetAtTime(destino, contexto.currentTime, activo ? 0.12 : 0.5);
     },
 
     detener() {

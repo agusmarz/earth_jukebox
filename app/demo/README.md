@@ -19,6 +19,7 @@ La dirección acepta estos parámetros, y se pueden combinar.
 | `?rio=<id>` | Abre ese río. Sin el parámetro abre el primero del índice |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
 | `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
+| `?idioma=en` | Presenta cada río en inglés. Sin el parámetro lo presenta en español |
 | `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca en verano |
 | `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
 
@@ -42,6 +43,12 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
 ```
 
 `valor` tiene los valores en sus unidades y `normas` los mismos valores llevados a 0 a 1 de las dos formas. `de_hueco`, `corregido`, `medido` e `interpolado` son opcionales. El título, la pestaña y la descripción del mapa salen de `nombre`, y las ciudades se dibujan con la etiqueta a la derecha, salvo que pise a otra ciudad que está al este, en cuyo caso va a la izquierda.
+
+## Presentación hablada
+
+Al empezar a escuchar y cada vez que se elige otro río, una voz dice dónde está el río, qué países recorre y cuánto mide. Son voces neuronales pregrabadas, `audios/es/<id>.mp3` (es-AR-ElenaNeural) y `audios/en/<id>.mp3` (en-US-AvaNeural), que genera `scripts/generar_voces.py` con edge-tts junto con `audios/textos.js`. Si un mp3 no carga, `locucion.js` dice el mismo texto con la voz del navegador. Si se cambia de río antes de que termine, la presentación anterior se corta. Mientras habla, la orquesta baja a un quinto de su volumen y vuelve al terminar.
+
+El botón L del panel (o la tecla L) alterna entre español e inglés y vuelve a presentar el río en el idioma nuevo. El botón R (o la tecla R) repite la presentación. Solo la presentación cambia de idioma, el resto de la interfaz sigue en español. `locucion.js` usa un elemento de audio y no `fetch`, así que funciona también desde `file://`, aunque el resto de la demo sigue necesitando el servidor local.
 
 ## Estaciones del año
 
@@ -119,6 +126,8 @@ pruebas/                  datos de prueba, con el mismo formato (los genera prue
 tramos.js                 formato viejo del Paraná, la demo ya no lo usa
 mapa.js                   proyección, dibujo y campo de distancias al río (Mapa.cargar arma todo para un río)
 sonido.js                 sampler y orquesta con Web Audio
+locucion.js               presentación hablada de cada río, con fallback a la voz del navegador y ducking de la orquesta
+audios/                   locuciones es/ y en/ y textos.js (lo genera scripts/generar_voces.py)
 demo.js                   carga de ríos, selectores de río y estación, normalización, cuadrado, panel y teclado
 muestras/                 grabaciones de VSCO 2 CE e índice (lo genera scripts/preparar_muestras.py)
 fuentes/                  Archivo, copiada de app_video/fuentes

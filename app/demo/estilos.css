@@ -235,6 +235,12 @@ p {
   color: var(--gris);
 }
 
+.idioma-activo {
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .capa[aria-pressed='false'] .relleno {
   background: #bdbdbd;
 }

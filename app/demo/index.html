@@ -59,9 +59,24 @@
           <span class="instrumento" id="detalle-musica">El nivel mueve la melodía, la pendiente la cantidad de notas</span>
         </span>
       </button>
+      <button id="boton-idioma" class="capa normalizacion" type="button">
+        <span class="tecla">L</span>
+        <span class="texto">
+          <span class="titulo">Idioma de la presentación</span>
+          <span class="valor"><span id="idioma-es" lang="es">ES</span> / <span id="idioma-en" lang="en">EN</span></span>
+          <span class="instrumento" id="detalle-idioma">Una voz presenta cada río al abrirlo</span>
+        </span>
+      </button>
+      <button id="boton-locucion" class="capa normalizacion" type="button">
+        <span class="tecla">R</span>
+        <span class="texto">
+          <span class="titulo">Repetir presentación</span>
+          <span class="instrumento">Vuelve a decir dónde está el río y cuánto mide</span>
+        </span>
+      </button>
     </section>
 
-    <p class="ayuda">Mouse o flechas para moverte, Shift para ir más rápido. Teclas 1 a 4 para prender y apagar cada instrumento, N para cambiar la normalización, M para cambiar la lógica de la música.</p>
+    <p class="ayuda">Mouse o flechas para moverte, Shift para ir más rápido. Teclas 1 a 4 para prender y apagar cada instrumento, N para cambiar la normalización, M para cambiar la lógica de la música, L para cambiar el idioma de la presentación y R para repetirla.</p>
     <p class="fuente">Datos SWOT de la NASA y el CNES, producto de ríos L2_HR_RiverSP versión D vía Hydrocron, julio de 2023 a noviembre de 2026.</p>
     <p class="fuente">Instrumentos grabados de VSCO 2 Community Edition de Versilian Studios, licencia CC0.</p>
   </aside>
@@ -71,6 +86,8 @@
   <script src="mapa.js"></script>
   <script src="muestras/indice.js"></script>
   <script src="sonido.js"></script>
+  <script src="audios/textos.js"></script>
+  <script src="locucion.js"></script>
   <script src="demo.js"></script>
 </body>
 </html>
