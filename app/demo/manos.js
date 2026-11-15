@@ -15,11 +15,18 @@
 (function () {
   const VERSION_VISION = '0.10.14';
   const URL_VISION = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${VERSION_VISION}`;
-  // El modelo se busca primero en la demo y en la carpeta del prototipo, y si no está se baja de Google
-  const RUTAS_MODELO = [
+  // Los modelos se buscan primero en la demo y en la carpeta del prototipo, y si no están se bajan de Google
+  const RUTAS_MODELO_MANOS = [
     'hand_landmarker.task',
     '../../manos/hand_landmarker.task',
     'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+  ];
+  // El cuerpo (Pose Landmarker) sabe de qué brazo es cada muñeca, cosa que el modelo de manos adivina
+  // por la forma de la mano. Se usa para decir qué mano es cuál (ver asignarManos)
+  const RUTAS_MODELO_POSE = [
+    'pose_landmarker_lite.task',
+    '../../manos/pose_landmarker_lite.task',
+    'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
   ];
   const TECLA_CAMARA = 'c';
 
@@ -129,8 +136,9 @@
   video.muted = true;
   video.playsInline = true;
 
-  let landmarker = null;
-  let cargaLandmarker = null;
+  let landmarker = null; // manos
+  let poseLandmarker = null; // cuerpo, null si no cargó (entonces se usa solo la continuidad)
+  let cargaModelos = null;
   let flujo = null;
   let encendida = false;
   let ultimoTiempoVideo = -1;
@@ -143,11 +151,12 @@
   }
   mostrarAviso('');
 
-  // 3. Carga de MediaPipe y del modelo
-  async function leerModelo() {
-    for (const ruta of RUTAS_MODELO) {
+  // 3. Carga de MediaPipe y de los modelos. Arranca apenas abre la app, con prioridad baja para no
+  // demorar las muestras de la orquesta, así al prender la cámara solo falta el permiso
+  async function leerModelo(rutas) {
+    for (const ruta of rutas) {
       try {
-        const respuesta = await fetch(ruta);
+        const respuesta = await fetch(ruta, { priority: 'low' });
         const tipo = respuesta.headers.get('content-type') || '';
         if (!respuesta.ok || tipo.includes('text/html')) continue;
         const datos = new Uint8Array(await respuesta.arrayBuffer());
@@ -156,42 +165,70 @@
         // Sigue con la ruta siguiente
       }
     }
-    throw new Error('Could not find hand_landmarker.task');
+    throw new Error(`Could not find ${rutas[rutas.length - 1].split('/').pop()}`);
   }
 
-  async function crearLandmarker() {
-    const { FilesetResolver, HandLandmarker } = await import(`${URL_VISION}/vision_bundle.mjs`);
-    const [archivos, modelo] = await Promise.all([
+  // Prueba con la GPU y si no puede, con la CPU
+  async function crearConDelegado(Clase, archivos, opciones) {
+    try {
+      return await Clase.createFromOptions(archivos, opciones('GPU'));
+    } catch (error) {
+      return Clase.createFromOptions(archivos, opciones('CPU'));
+    }
+  }
+
+  async function cargarModelos() {
+    const { FilesetResolver, HandLandmarker, PoseLandmarker } = await import(`${URL_VISION}/vision_bundle.mjs`);
+    const [archivos, modeloManos, modeloPose] = await Promise.all([
       FilesetResolver.forVisionTasks(`${URL_VISION}/wasm`),
-      leerModelo(),
+      leerModelo(RUTAS_MODELO_MANOS),
+      leerModelo(RUTAS_MODELO_POSE).catch(() => null),
     ]);
-    const opciones = (delegado) => ({
-      baseOptions: { modelAssetBuffer: modelo, delegate: delegado },
+    landmarker = await crearConDelegado(HandLandmarker, archivos, (delegado) => ({
+      baseOptions: { modelAssetBuffer: modeloManos, delegate: delegado },
       runningMode: 'VIDEO',
       numHands: 2,
       minHandDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5,
-    });
-    try {
-      return await HandLandmarker.createFromOptions(archivos, opciones('GPU'));
-    } catch (error) {
-      return HandLandmarker.createFromOptions(archivos, opciones('CPU'));
+    }));
+    if (modeloPose) {
+      try {
+        poseLandmarker = await crearConDelegado(PoseLandmarker, archivos, (delegado) => ({
+          baseOptions: { modelAssetBuffer: modeloPose, delegate: delegado },
+          runningMode: 'VIDEO',
+          numPoses: 1,
+          minPoseDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        }));
+      } catch (error) {
+        poseLandmarker = null; // sin el cuerpo, las manos se distinguen solo por continuidad
+      }
     }
   }
+
+  function precargar() {
+    if (!cargaModelos) {
+      cargaModelos = cargarModelos().catch((error) => {
+        cargaModelos = null; // al prender la cámara se vuelve a intentar
+        throw error;
+      });
+      cargaModelos.catch(() => {});
+    }
+    return cargaModelos;
+  }
+  precargar();
 
   // 4. Encender y apagar la cámara
   async function encender() {
     if (encendida) return;
     encendida = true;
     actualizarBoton();
-    mostrarAviso('Loading the hand model…');
+    if (!landmarker) mostrarAviso('Loading the hand model…');
     try {
-      if (!cargaLandmarker) cargaLandmarker = crearLandmarker();
-      const [modelo, medio] = await Promise.all([
-        cargaLandmarker,
+      const [, medio] = await Promise.all([
+        precargar(),
         navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' }, audio: false }),
       ]);
-      landmarker = modelo;
       if (!encendida) {
         for (const pista of medio.getTracks()) pista.stop();
         return;
@@ -207,7 +244,6 @@
       if (error && error.name === 'NotAllowedError') mostrarAviso('The browser blocked the camera');
       else if (error && error.name === 'NotFoundError') mostrarAviso('No camera found');
       else mostrarAviso(`Hand control is unavailable. ${error && error.message ? error.message : ''}`);
-      if (!landmarker) cargaLandmarker = null;
       apagar(true);
     }
   }
@@ -219,6 +255,7 @@
     video.srcObject = null;
     vista.hidden = true;
     if (!conservarAviso) mostrarAviso('');
+    munecasPose = null;
     soltarManoDerecha();
     estado.manoIzquierdaActiva = false;
     resetearTrackingIzquierdo();
@@ -266,6 +303,7 @@
     } catch (error) {
       return;
     }
+    detectarPose(marca);
 
     ejeIzq = null;
     const { derecha: landmarksDerecha, izquierda: landmarksIzquierda } = asignarManos(resultado, marca);
@@ -284,6 +322,39 @@
     mostrarHud();
   }
 
+  // 5a. Muñecas del cuerpo. El Pose Landmarker corre sobre la imagen sin espejar, porque ahí sus
+  // nombres son los del cuerpo de la persona (15 muñeca izquierda, 16 muñeca derecha), y las x se
+  // pasan a la imagen espejada en la que trabajan las manos. Corre un cuadro sí y otro no, para
+  // gastar menos, y lo último que vio vale POSE_VIGENTE_MS.
+  const POSE_CADA = 2;
+  const POSE_VIGENTE_MS = 250;
+  const VISIBILIDAD_MINIMA_MUNECA = 0.5;
+  const MUNECA_IZQUIERDA_POSE = 15;
+  const MUNECA_DERECHA_POSE = 16;
+  let munecasPose = null; // { derecha: {x, y} | null, izquierda: {x, y} | null, t }
+  let cuadroPose = 0;
+
+  function detectarPose(marca) {
+    if (!poseLandmarker || cuadroPose++ % POSE_CADA !== 0) return;
+    let resultado;
+    try {
+      resultado = poseLandmarker.detectForVideo(video, marca);
+    } catch (error) {
+      return;
+    }
+    const cuerpo = resultado.landmarks && resultado.landmarks[0];
+    if (!cuerpo) {
+      munecasPose = null;
+      return;
+    }
+    const muneca = (i) => {
+      const p = cuerpo[i];
+      const visible = p && (p.visibility === undefined || p.visibility >= VISIBILIDAD_MINIMA_MUNECA);
+      return visible && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1 ? { x: 1 - p.x, y: p.y } : null;
+    };
+    munecasPose = { derecha: muneca(MUNECA_DERECHA_POSE), izquierda: muneca(MUNECA_IZQUIERDA_POSE), t: marca };
+  }
+
   // 5b. Qué mano es cuál. MediaPipe etiqueta cada mano por su forma, y con el puño cerrado (casi
   // simétrico) o lejos de su lado suele confundir la izquierda con la derecha. Si eso pasa a mitad
   // de un giro, el puño movería el cuadrado y el giro se cortaría. Por eso una mano conserva su
@@ -298,8 +369,36 @@
   const VOTOS_MANO_NUEVA = 5; // impar, para que no haya empate
   const ultimaPosicion = { derecha: null, izquierda: null };
   let candidata = null; // mano nueva en votación: { x, y, t, votos: { derecha, izquierda } }
+  // Antes que todo eso decide el cuerpo: cada mano es de la muñeca del Pose Landmarker que tiene
+  // cerca (a menos de DISTANCIA_POSE de la muñeca de la mano). Solo si el cuerpo no se ve, o las
+  // muñecas no coinciden con ninguna mano, se usan la continuidad y la votación.
+  const DISTANCIA_POSE = 0.12;
 
-  function asignarManos(resultado, ahora) {
+  function asignarPorPose(manos, munecas, ahora) {
+    if (!munecas || ahora - munecas.t > POSE_VIGENTE_MS || manos.length === 0) return null;
+    if (!munecas.derecha && !munecas.izquierda) return null;
+    const distancia = (i, m) => Math.hypot(manos[i][0].x - m.x, manos[i][0].y - m.y);
+    const opciones = manos.length === 1
+      ? [{ derecha: 0, izquierda: null }, { derecha: null, izquierda: 0 }]
+      : [{ derecha: 0, izquierda: 1 }, { derecha: 1, izquierda: 0 }];
+    let mejor = null;
+    for (const opcion of opciones) {
+      let costo = 0;
+      let comparadas = 0;
+      let valida = true;
+      for (const lado of ['derecha', 'izquierda']) {
+        if (opcion[lado] === null || !munecas[lado]) continue;
+        const d = distancia(opcion[lado], munecas[lado]);
+        if (d >= DISTANCIA_POSE) valida = false;
+        costo += d;
+        comparadas++;
+      }
+      if (valida && comparadas > 0 && (!mejor || costo < mejor.costo)) mejor = { ...opcion, costo };
+    }
+    return mejor ? { derecha: mejor.derecha, izquierda: mejor.izquierda } : null;
+  }
+
+  function asignarManos(resultado, ahora, munecas = munecasPose) {
     const manos = resultado.landmarks || [];
     // En espejo, la etiqueta "Left" de MediaPipe es la mano derecha física
     const lados = manos.map((_, i) => {
@@ -316,8 +415,12 @@
     const previaIzquierda = reciente('izquierda');
     const asignadas = { derecha: null, izquierda: null };
 
-    if (manos.length !== 1) candidata = null;
-    if (manos.length >= 2) {
+    const porPose = asignarPorPose(manos, munecas, ahora);
+    if (porPose || manos.length !== 1) candidata = null;
+    if (porPose) {
+      asignadas.derecha = porPose.derecha;
+      asignadas.izquierda = porPose.izquierda;
+    } else if (manos.length >= 2) {
       const [a, b] = centros;
       let primeraEsDerecha;
       if (previaDerecha && previaIzquierda) {
@@ -608,6 +711,20 @@
     if (izquierda) {
       dibujarEsqueleto(izquierda, w, h, estado.punoIzquierdoActivo ? BLANCO : GRIS, !estado.punoIzquierdoActivo);
     }
+    // Muñecas del cuerpo (Pose Landmarker), con las que se decide qué mano es cuál
+    if (munecasPose) {
+      c.strokeStyle = BLANCO;
+      c.lineWidth = 1.5;
+      for (const m of [munecasPose.derecha, munecasPose.izquierda]) {
+        if (!m) continue;
+        c.beginPath();
+        c.arc(m.x * w, m.y * h, 7, 0, Math.PI * 2);
+        c.stroke();
+      }
+    }
+    // R y L junto a la muñeca de cada mano, para ver enseguida si alguna quedó confundida
+    if (derecha) dibujarEtiquetaMano(derecha, 'R', w, h);
+    if (izquierda) dibujarEtiquetaMano(izquierda, 'L', w, h);
     if (ejeIzq) {
       const color = estado.girandoActivamente ? BLANCO : GRIS;
       const cx = ejeIzq.cx * w;
@@ -627,6 +744,20 @@
       c.lineTo(ejeIzq.sx * w, ejeIzq.sy * h);
       c.stroke();
     }
+  }
+
+  function dibujarEtiquetaMano(lm, letra, w, h) {
+    const c = contextoVisor;
+    const lado = 14;
+    const x = Math.max(0, Math.min(w - lado, lm[0].x * w - lado / 2));
+    const y = Math.max(0, Math.min(h - lado, lm[0].y * h + 6));
+    c.fillStyle = BLANCO;
+    c.fillRect(x, y, lado, lado);
+    c.fillStyle = '#000000';
+    c.font = "800 10px 'Archivo', system-ui, sans-serif";
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(letra, x + lado / 2, y + lado / 2 + 0.5);
   }
 
   function dibujarEsqueleto(lm, w, h, color, punteado) {
@@ -676,5 +807,7 @@
     encender,
     apagar,
     get estado() { return { ...estado, dedosLevantados: [...estado.dedosLevantados] }; },
+    // Qué modelos ya están listos, se cargan solos al abrir la app
+    get modelos() { return { manos: landmarker !== null, pose: poseLandmarker !== null }; },
   };
 })();
