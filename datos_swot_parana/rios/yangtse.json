@@ -1,0 +1,23 @@
+{
+  "id": "yangtse",
+  "nombre": "Yangtsé",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "43309000016"
+  },
+  "ciudades": [
+    ["Nantong", 32.0, 120.86],
+    ["Zhenjiang", 32.2, 119.43],
+    ["Nankín", 32.06, 118.8],
+    ["Anqing", 30.53, 117.05],
+    ["Jiujiang", 29.71, 116.0],
+    ["Wuhan", 30.59, 114.3],
+    ["Xiangyang", 32.01, 112.12],
+    ["Ankang", 32.68, 109.03],
+    ["Hanzhong", 33.07, 107.03]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

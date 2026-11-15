@@ -1,0 +1,23 @@
+{
+  "id": "mekong",
+  "nombre": "Mekong",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "44301000016"
+  },
+  "ciudades": [
+    ["Can Tho", 10.03, 105.78],
+    ["Chau Doc", 10.7, 105.12],
+    ["Nom Pen", 11.56, 104.92],
+    ["Kratie", 12.49, 106.02],
+    ["Pakse", 15.12, 105.8],
+    ["Savannakhet", 16.55, 104.75],
+    ["Vientián", 17.97, 102.63],
+    ["Luang Prabang", 19.89, 102.13],
+    ["Luang Namtha", 20.95, 101.4]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

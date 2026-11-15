@@ -1,0 +1,22 @@
+{
+  "id": "congo",
+  "nombre": "Congo",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "13211000016"
+  },
+  "ciudades": [
+    ["Boma", -5.85, 13.05],
+    ["Matadi", -5.82, 13.45],
+    ["Kinsasa", -4.32, 15.31],
+    ["Bolobo", -2.16, 16.24],
+    ["Impfondo", 1.62, 18.06],
+    ["Bangui", 4.37, 18.58],
+    ["Mobaye", 4.32, 21.18],
+    ["Bangassou", 4.74, 22.82]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

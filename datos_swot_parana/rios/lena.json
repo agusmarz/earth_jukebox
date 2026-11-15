@@ -1,0 +1,23 @@
+{
+  "id": "lena",
+  "nombre": "Lena",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "34100007566"
+  },
+  "ciudades": [
+    ["Kiusiur", 70.68, 127.39],
+    ["Zhigansk", 66.77, 123.37],
+    ["Sangar", 63.92, 127.47],
+    ["Yakutsk", 62.03, 129.73],
+    ["Pokrovsk", 61.48, 129.13],
+    ["Olekminsk", 60.37, 120.43],
+    ["Lensk", 60.73, 114.93],
+    ["Vitim", 59.45, 112.56],
+    ["Bodaibo", 57.85, 114.19]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

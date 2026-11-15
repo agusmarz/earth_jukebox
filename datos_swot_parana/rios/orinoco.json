@@ -1,0 +1,20 @@
+{
+  "id": "orinoco",
+  "nombre": "Orinoco",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "61309000016"
+  },
+  "ciudades": [
+    ["Barrancas del Orinoco", 8.7, -62.19],
+    ["Ciudad Guayana", 8.35, -62.65],
+    ["Ciudad Bolívar", 8.12, -63.55],
+    ["Caicara del Orinoco", 7.63, -66.17],
+    ["Puerto Carreño", 6.19, -67.49],
+    ["Puerto Ayacucho", 5.66, -67.62]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

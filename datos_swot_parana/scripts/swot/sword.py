@@ -210,20 +210,53 @@ def _facc_de_la_cadena(tramos, id_tramo, ya_usados, sentido="arriba"):
     return valores[int(PERCENTIL_FACC * (len(valores) - 1))]
 
 
+# SWORD también tiene ramales ciegos con el facc del río entero: trenzas que terminan en un tramo fantasma
+# (el Lena, con 2,4 millones de km²) o brazos cortos de un estuario (el Amazonas). Subiendo por ahí el camino
+# se queda sin vecinos y eso no es una naciente. Una naciente es falsa si el percentil PERCENTIL_FACC del facc
+# de los últimos TRAMOS_A_MIRAR tramos del camino pasa de FACC_MAXIMO_NACIENTE. En ese caso se vuelve a la
+# última bifurcación con alternativas sin probar y se sigue por la mejor de ellas, con el mismo orden.
+FACC_MAXIMO_NACIENTE = 100_000  # km²
+
+
+def _naciente_falsa(tramos, camino):
+    valores = sorted(tramos[i]["facc"] for i in camino[-TRAMOS_A_MIRAR:])
+    return valores[int(PERCENTIL_FACC * (len(valores) - 1))] > FACC_MAXIMO_NACIENTE
+
+
 def _seguir(tramos, inicio, sentido):
     camino, usados = [inicio], {inicio}
+    alternativas = [None]  # para cada tramo del camino, sus vecinos todavía sin probar, del mejor al peor
+    primer_camino = None
     while True:
-        vecinos = [u for u in tramos[camino[-1]][sentido] if u in tramos and u not in usados]
-        if not vecinos:
+        if alternativas[-1] is None:
+            vecinos = [u for u in tramos[camino[-1]][sentido] if u in tramos and u not in usados]
+            # sorted es estable, así que el primero es el mismo que elegiría max
+            alternativas[-1] = sorted(vecinos, reverse=True, key=lambda u: (
+                _facc_de_la_cadena(tramos, u, usados, sentido), tramos[u]["path_freq"], tramos[u]["facc"]))
+        alternativas[-1] = [u for u in alternativas[-1] if u not in usados]
+        if alternativas[-1]:
+            siguiente = alternativas[-1].pop(0)
+            camino.append(siguiente)
+            usados.add(siguiente)
+            alternativas.append(None)
+            continue
+        if sentido != "arriba" or not _naciente_falsa(tramos, camino):
             return camino
-        siguiente = max(vecinos, key=lambda u: (_facc_de_la_cadena(tramos, u, usados, sentido),
-                                                tramos[u]["path_freq"], tramos[u]["facc"]))
-        camino.append(siguiente)
-        usados.add(siguiente)
+        # Naciente falsa: se vuelve atrás. Los tramos ya recorridos quedan en usados y no se repiten.
+        primer_camino = primer_camino or list(camino)
+        while camino and not [u for u in alternativas[-1] if u not in usados]:
+            camino.pop()
+            alternativas.pop()
+        if not camino:
+            return primer_camino
 
 
 def cauce_por_topologia(desembocadura):
-    """Desde la desembocadura sube siempre por el vecino aguas arriba de mayor facc hasta la naciente."""
+    """Desde la desembocadura sube siempre por el vecino aguas arriba de mayor facc hasta la naciente.
+
+    Si el camino termina en un ramal ciego con facc grande (ver _naciente_falsa), vuelve atrás y prueba la
+    siguiente alternativa.
+    """
     desembocadura = str(desembocadura)
     tramos = tramos_sword(continente_de(desembocadura))
     if desembocadura not in tramos:

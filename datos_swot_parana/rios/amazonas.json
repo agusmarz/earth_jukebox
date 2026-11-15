@@ -1,0 +1,23 @@
+{
+  "id": "amazonas",
+  "nombre": "Amazonas",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "62100100016"
+  },
+  "ciudades": [
+    ["Macapá", 0.035, -51.07],
+    ["Santarém", -2.44, -54.71],
+    ["Óbidos", -1.9, -55.52],
+    ["Parintins", -2.63, -56.74],
+    ["Itacoatiara", -3.14, -58.44],
+    ["Manaos", -3.12, -60.02],
+    ["Coari", -4.08, -63.14],
+    ["Tefé", -3.35, -64.71],
+    ["Leticia", -4.21, -69.94]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

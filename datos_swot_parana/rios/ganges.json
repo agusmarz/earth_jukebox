@@ -1,0 +1,22 @@
+{
+  "id": "ganges",
+  "nombre": "Ganges-Brahmaputra-Meghna",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "45311100016"
+  },
+  "ciudades": [
+    ["Chandpur", 23.23, 90.65],
+    ["Rajshahi", 24.37, 88.6],
+    ["Bhagalpur", 25.25, 86.98],
+    ["Patna", 25.61, 85.14],
+    ["Benarés", 25.32, 83.01],
+    ["Prayagraj", 25.43, 81.85],
+    ["Etawah", 26.78, 79.02],
+    ["Kota", 25.18, 75.83]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}

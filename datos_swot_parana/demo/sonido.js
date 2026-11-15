@@ -15,6 +15,15 @@
 // Si el cuadrado se queda quieto, la orquesta hace una fermata sobre el acorde que estaba
 // sonando. Cada nota se sostiene hasta que su grabación se apaga del todo y ahí se vuelve a
 // disparar, en bucle. Al volver a moverse vuelve la música.
+// Hay tres lógicas musicales, que se eligen con Sonido.fijarMusica.
+//   original      la de siempre, el nivel mueve la melodía unos 22 semitonos y el motivo de cada
+//                 tramo suma saltos de hasta una octava, la pendiente solo cambia cuántas notas
+//                 toca el arpa
+//   dos_octavas   el nivel lleva la melodía exactamente de re3 a re5 y el motivo queda como un
+//                 adorno chico, así se escucha el dato y no el azar. La pendiente además sube el
+//                 registro del arpa dos octavas, de la2 a la4. Ancho y amplitud no cambian.
+//   relieve       la melodía toma el ancho (que cambia de tramo a tramo) y las cuerdas el nivel
+//                 (que baja parejo hacia la desembocadura). Ver MUSICAS.
 // Las muestras se leen con fetch, así que la demo tiene que abrirse desde un servidor local.
 
 (function () {
@@ -36,6 +45,35 @@
   const PENTATONICA = [0, 3, 5, 7, 10];
   const NOTA_BASE_MELODIA = 50;
   const MADERAS = ['fagot', 'clarinete', 'oboe', 'flauta'];
+
+  // Lógicas musicales. gradosNivel es cuántos grados de la pentatónica recorre la nota base de la
+  // melodía entre el nivel mínimo y el máximo (5 grados son una octava). adorno lleva el grado del
+  // motivo (0 a 5) a lo que se suma sobre esa nota base. El arpa del modo dos_octavas arranca su
+  // arpegio en PISO_ARPA más hasta RANGO_ARPA semitonos según la pendiente.
+  // variables dice qué característica del tramo toca cada grupo de instrumentos. Las teclas 1 a 4
+  // prenden y apagan características, así que siempre apagan el grupo que la está tocando.
+  const VARIABLES_CLASICAS = { cuerdas: 'ancho', maderas: 'nivel', arpa: 'pendiente', bajo: 'amplitud' };
+  const MUSICAS = {
+    original: { variables: VARIABLES_CLASICAS, gradosNivel: 9, adorno: (grado) => grado, arpa: 'fija', bajo: 'patrones' },
+    dos_octavas: { variables: VARIABLES_CLASICAS, gradosNivel: 10, adorno: (grado) => Math.floor(grado / 2), arpa: 'amplia', bajo: 'patrones' },
+    // relieve. El nivel es la altura del agua sobre el mar y baja parejo hacia la desembocadura,
+    // así que entre dos tramos vecinos casi no cambia (dice dónde estás, no cómo es el tramo).
+    // Por eso pasa a las cuerdas, que dan el color de fondo, y la melodía toma el ancho, que
+    // cambia de un tramo a otro. La melodía recorre dos octavas de la escala menor (el doble de
+    // notas que la pentatónica), no tiene saltos al azar (el motivo solo pone el ritmo) y corre
+    // las notas que rozan el acorde a un semitono. El arpa va arriba de la melodía para no taparla
+    // y el bajo cambia de a una nota por compás en lugar de tener tres patrones.
+    relieve: {
+      variables: { cuerdas: 'nivel', maderas: 'ancho', arpa: 'pendiente', bajo: 'amplitud' },
+      arpa: 'arriba', bajo: 'continuo',
+    },
+  };
+  const PISO_ARPA = 45;
+  const RANGO_ARPA = 24;
+  const PISO_ARPA_ARRIBA = 74; // re5, la nota más aguda de la melodía en relieve
+  const ESCALA_MENOR = [0, 2, 3, 5, 7, 8, 10];
+  const GRADOS_RELIEVE = 14; // dos octavas de la escala menor, de re3 a re5
+  const NOTAS_BAJO = [0, 7, 12, 7, 0, 12, 7, 12]; // fundamental, quinta y octava, en este orden
 
   // Patrones del contrabajo según la amplitud, [paso, semitonos sobre la fundamental, duración en semicorcheas]
   const PATRONES_BAJO = [
@@ -71,6 +109,7 @@
   let vozMelodia = null;
   let tramosParaTriangulo = 0;
   let retomarAlFijar = false;
+  let musica = 'original';
   const motivos = new Map();
   // Todas las notas que están sonando o programadas, para poder cortarlas al cambiar de río
   const vocesActivas = new Set();
@@ -244,8 +283,6 @@
       ganancia.connect(filtroFermata);
       return ganancia;
     });
-    filtroCuerdas.connect(capas.ancho.movimiento);
-    filtroFermata.connect(capas.ancho.fermata);
 
     // Triángulo, con su propia ganancia de usuario (tecla 5). Pasa por la cercanía como el resto,
     // así también se aleja y se panea. El ruido del golpe se arma una sola vez.
@@ -274,8 +311,53 @@
     return NOTA_BASE_MELODIA + 12 * Math.floor(grado / 5) + PENTATONICA[grado % 5];
   }
 
+  const variableDe = (grupo) => MUSICAS[musica].variables[grupo];
+
+  // Relieve. Nota de la escala menor para el valor, y si roza a un semitono una voz del acorde
+  // sin ser ella misma nota del acorde, pasa a la nota de la escala más cercana que no roce
+  // (ante un empate, la de abajo).
+  function midiRelieve(u, acorde) {
+    const clases = acorde.voces.map((midi) => midi % 12);
+    const deGrado = (g) => NOTA_BASE_MELODIA + 12 * Math.floor(g / 7) + ESCALA_MENOR[((g % 7) + 7) % 7];
+    const roza = (midi) => !clases.includes(midi % 12)
+      && clases.some((clase) => [1, 11].includes((((midi - clase) % 12) + 12) % 12));
+    const grado = Math.round(u * GRADOS_RELIEVE);
+    for (const desvio of [0, -1, 1, -2, 2]) {
+      const midi = deGrado(grado + desvio);
+      if (!roza(midi)) return midi;
+    }
+    return deGrado(grado);
+  }
+
+  // Altura de la melodía para un valor, un grado del motivo y el acorde, según la lógica elegida
+  function midiMelodia(u, grado, acorde) {
+    const logica = MUSICAS[musica];
+    if (musica === 'relieve') return midiRelieve(u, acorde);
+    return midiPentatonica(Math.round(u * logica.gradosNivel) + logica.adorno(grado));
+  }
+
   // Altura de la nota fija, la misma escala que la melodía pero sin el motivo
-  const midiNotaFija = () => midiPentatonica(Math.round(valor('nivel') * 9));
+  const midiNotaFija = (acorde) => midiMelodia(valor(variableDe('maderas')), 0, acorde);
+
+  // Arpegio del arpa. En la lógica original recorre las cuatro primeras voces del acorde y su
+  // octava. En dos_octavas toma ocho notas del acorde desde un piso que sube con la pendiente.
+  // En relieve recorre las cuatro voces arriba de la melodía, en un registro fijo.
+  function arpegioArpa(acorde, u) {
+    const voces = acorde.voces.slice(0, 4);
+    const modo = MUSICAS[musica].arpa;
+    if (modo === 'fija') {
+      const arpegio = [...voces].sort((a, b) => a - b);
+      return [...arpegio, ...arpegio.map((midi) => midi + 12)].map((midi) => midi + 12);
+    }
+    const clases = voces.map((midi) => midi % 12);
+    const notas = [];
+    const piso = modo === 'arriba' ? PISO_ARPA_ARRIBA : PISO_ARPA + Math.round(u * RANGO_ARPA);
+    const cantidad = modo === 'arriba' ? 5 : 8;
+    for (let midi = piso; notas.length < cantidad; midi++) {
+      if (clases.includes(midi % 12)) notas.push(midi);
+    }
+    return notas;
+  }
 
   // Generador pseudoaleatorio con semilla, para que cada tramo tenga siempre el mismo motivo
   function aleatorio(semilla) {
@@ -322,8 +404,17 @@
     });
   }
 
+  // Las cuerdas entran en la capa de la característica que tocan, que depende de la música
+  function conectarCuerdas() {
+    const capa = capas[variableDe('cuerdas')];
+    nodos.filtroCuerdas.disconnect();
+    nodos.filtroFermata.disconnect();
+    nodos.filtroCuerdas.connect(capa.movimiento);
+    nodos.filtroFermata.connect(capa.fermata);
+  }
+
   function actualizarCuerdas(tiempo) {
-    const u = valor('ancho');
+    const u = valor(variableDe('cuerdas'));
     const vocesAudibles = 1 + u * 5;
     nodos.vocesCuerdas.forEach((voz, k) => {
       voz.gain.setTargetAtTime(limitar(vocesAudibles - k, 0, 1), tiempo, 0.25);
@@ -345,11 +436,11 @@
     if (grado === null) return;
     let espera = 1;
     while (espera < 4 && motivo[(indice + espera) % 16] === null) espera += 1;
-    const u = valor('nivel', tramo);
-    const midi = midiPentatonica(Math.round(u * 9) + grado);
+    const u = valor(variableDe('maderas'), tramo);
+    const midi = midiMelodia(u, grado, acordeDe(paso));
     if (vozMelodia) vozMelodia.apagar(tiempo, 0.12);
     vozMelodia = tocar(maderaPara(u), midi, tiempo, {
-      destino: capas.nivel.movimiento, volumen: indice % 4 === 0 ? 1 : 0.85,
+      destino: capas[variableDe('maderas')].movimiento, volumen: indice % 4 === 0 ? 1 : 0.85,
       duracion: espera * SEMICORCHEA * 2, ataque: 0.04, liberacion: 0.35,
     });
   }
@@ -361,11 +452,11 @@
     const motivo = motivoDe(tramo);
     let indice = Math.floor(paso / 2) % 16;
     while (motivo[indice] === null) indice = (indice + 15) % 16;
-    const u = valor('nivel', tramo);
-    const midi = midiPentatonica(Math.round(u * 9) + motivo[indice]);
+    const u = valor(variableDe('maderas'), tramo);
+    const midi = midiMelodia(u, motivo[indice], acordeDe(paso));
     if (vozMelodia) vozMelodia.apagar(tiempo, 0.12);
     vozMelodia = tocar(maderaPara(u), midi, tiempo, {
-      destino: capas.nivel.movimiento, volumen: paso % 4 === 0 ? 0.95 : 0.8,
+      destino: capas[variableDe('maderas')].movimiento, volumen: paso % 4 === 0 ? 0.95 : 0.8,
       duracion: SEMICORCHEA * 2, ataque: 0.02, liberacion: 0.25,
     });
   }
@@ -396,9 +487,8 @@
     }
     const golpes = Math.round(2 + u * 10);
     if (!euclideo(golpes, 16)[pasoCompas]) return;
-    const arpegio = [...acorde.voces.slice(0, 4)].sort((a, b) => a - b);
-    const notas = [...arpegio, ...arpegio.map((midi) => midi + 12)];
-    const midi = notas[golpesArpa % notas.length] + 12;
+    const notas = arpegioArpa(acorde, u);
+    const midi = notas[golpesArpa % notas.length];
     golpesArpa += 1;
     tocar('arpa', midi, tiempo, {
       destino: capas.pendiente.movimiento, volumen: pasoCompas % 4 === 0 ? 1 : 0.75, ataque: 0.003, duracion: 1.6, liberacion: 1,
@@ -409,6 +499,21 @@
   // crecen y vuelven en cada compás, más hondo cuanto mayor la amplitud.
   function tocarAmplitud(pasoCompas, acorde, tiempo, tramo) {
     const u = valor('amplitud', tramo);
+    if (MUSICAS[musica].bajo === 'continuo') {
+      // De 1 a 8 notas por compás repartidas parejo, cada una dura hasta la siguiente
+      const golpes = 1 + Math.round(u * 7);
+      const patron = euclideo(golpes, 16);
+      if (patron[pasoCompas]) {
+        const orden = patron.slice(0, pasoCompas).filter(Boolean).length;
+        let largo = 1;
+        while (pasoCompas + largo < 16 && !patron[pasoCompas + largo]) largo += 1;
+        tocar('contrabajo', acorde.bajo + NOTAS_BAJO[orden % NOTAS_BAJO.length], tiempo, {
+          destino: capas.amplitud.movimiento, duracion: (largo - 0.3) * SEMICORCHEA, ataque: 0.03, liberacion: 0.3,
+        });
+      }
+      if (pasoCompas === 0) tocarCornos(acorde, tiempo, COMPAS + 0.3, u);
+      return;
+    }
     const patron = PATRONES_BAJO[Math.min(2, Math.floor(u * 3))];
     const nota = patron.find(([paso]) => paso === pasoCompas);
     if (nota) {
@@ -554,9 +659,13 @@
     acorde.voces.forEach((midi, k) => {
       sostenerEnBucle(generacion, cuerdaPara(midi), midi, nodos.vocesFermata[k], 1, inicio);
     });
-    const notaFija = midiNotaFija();
-    sostenerEnBucle(generacion, maderaPara(valor('nivel')), notaFija, capas.nivel.fermata, 0.9, inicio);
-    sostenerEnBucle(generacion, 'arpa', notaFija + 12, capas.pendiente.fermata, 0.7, inicio);
+    const notaFija = midiNotaFija(acorde);
+    const capaMaderas = capas[variableDe('maderas')];
+    sostenerEnBucle(generacion, maderaPara(valor(variableDe('maderas'))), notaFija, capaMaderas.fermata, 0.9, inicio);
+    // En dos_octavas el arpa sostiene la nota más grave de su arpegio, así también la fermata
+    // dice cuánta pendiente hay. En relieve sostiene la más grave de su registro, arriba de la melodía.
+    const notaArpa = MUSICAS[musica].arpa === 'fija' ? notaFija + 12 : arpegioArpa(acorde, valor('pendiente'))[0];
+    sostenerEnBucle(generacion, 'arpa', notaArpa, capas.pendiente.fermata, 0.7, inicio);
     sostenerEnBucle(generacion, 'contrabajo', acorde.bajo, capas.amplitud.fermata, 0.9, inicio);
     sostenerEnBucle(generacion, 'corno', acorde.bajo + 12, capas.amplitud.fermata, 0.3 + valor('amplitud') * 0.5, inicio);
   }
@@ -592,6 +701,7 @@
       if (nodos) return contexto.resume();
       await contexto.resume();
       nodos = crearGrafo();
+      conectarCuerdas();
       proximoPaso = contexto.currentTime + 0.05;
       reloj = setInterval(programar, 25);
       if (tramoActual) this.fijarTramo(tramoActual);
@@ -642,6 +752,33 @@
       ultimoRegistrado = tramo;
       cruzados.push(tramo);
       tramosParaTriangulo += 1;
+    },
+
+    musicas: Object.keys(MUSICAS),
+
+    // Cambia la lógica musical. Lo que está sonando no se corta, el cambio entra en la nota
+    // siguiente. Si la orquesta está en fermata, la rearma con las alturas nuevas.
+    fijarMusica(nombre) {
+      if (!MUSICAS[nombre] || nombre === musica) return;
+      musica = nombre;
+      if (!nodos) return;
+      const ahora = contexto.currentTime;
+      // Las cuerdas pueden cambiar de característica. La melodía que está sonando sale por la
+      // capa vieja y se apaga sola, la próxima nota ya entra por la nueva.
+      conectarCuerdas();
+      actualizarCuerdas(ahora);
+      if (vozMelodia) vozMelodia.apagar(ahora, 0.15);
+      if (quieto) empezarFermata(ahora);
+    },
+
+    // Qué característica toca cada grupo de instrumentos (cuerdas, maderas, arpa, bajo)
+    variableDe,
+
+    // Qué instrumentos tocan cada característica con la música elegida, para el panel
+    instrumentosDe(variable) {
+      const nombres = { cuerdas: 'Cuerdas', maderas: 'Maderas', arpa: 'Arpa y timbal', bajo: 'Contrabajo y cornos' };
+      const grupo = Object.keys(nombres).find((g) => variableDe(g) === variable);
+      return nombres[grupo];
     },
 
     trianguloCada: TRIANGULO_CADA,

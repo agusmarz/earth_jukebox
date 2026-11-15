@@ -7,6 +7,38 @@
     {
       "id": "mississippi",
       "nombre": "Mississippi"
+    },
+    {
+      "id": "amazonas",
+      "nombre": "Amazonas"
+    },
+    {
+      "id": "congo",
+      "nombre": "Congo"
+    },
+    {
+      "id": "ganges",
+      "nombre": "Ganges-Brahmaputra-Meghna"
+    },
+    {
+      "id": "orinoco",
+      "nombre": "Orinoco"
+    },
+    {
+      "id": "yangtse",
+      "nombre": "Yangtsé"
+    },
+    {
+      "id": "yenisei",
+      "nombre": "Yeniséi"
+    },
+    {
+      "id": "lena",
+      "nombre": "Lena"
+    },
+    {
+      "id": "mekong",
+      "nombre": "Mekong"
     }
   ]
 }

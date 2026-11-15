@@ -18,6 +18,7 @@ La dirección acepta tres parámetros, y se pueden combinar.
 | --- | --- |
 | `?rio=<id>` | Abre ese río. Sin el parámetro abre el primero del índice |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
+| `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
 | `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
 
 Por ejemplo http://localhost:8000/?carpeta=pruebas&rio=sintetico&normalizacion=global. La dirección se actualiza sola al cambiar de río o de normalización, así se puede copiar y compartir.
@@ -64,6 +65,29 @@ El río suena como una orquesta de instrumentos grabados. Cada característica d
 | 4 | Amplitud | Contrabajo y cornos | Cuanto más sube y baja el agua, más se mueve el contrabajo y más crecen los cornos en cada compás |
 | 5 | Tramos cruzados | Triángulo | Suena un golpe cada 10 tramos cruzados, en la semicorchea siguiente. La barra del panel se llena a medida que cruzás tramos |
 
+### Lógica musical
+
+El botón M del panel (o la tecla M) pasa por tres formas de llevar los datos a notas. Lo que está sonando no se corta, el cambio entra en la nota siguiente. Si la orquesta está en fermata, la rearma con las alturas nuevas.
+
+| Modo | Melodía (maderas) | Cuerdas | Arpa | Contrabajo |
+| --- | --- | --- | --- | --- |
+| Original | Nivel. La nota base va de re3 a do5 (22 semitonos) y el motivo de cada tramo le suma saltos de hasta una octava | Ancho, de 1 a 6 voces y más brillo | Pendiente, más notas por compás en un registro fijo | Amplitud, tres patrones |
+| Dos octavas | Nivel. La nota base va de re3 a re5 y el motivo queda como un adorno de hasta dos notas de la escala | Ancho, igual que en original | Pendiente, más notas y además un registro que sube de la2 a la4 | Amplitud, tres patrones |
+| Relieve | Ancho. Dos octavas de la escala menor, de re3 a re5, sin saltos al azar (el motivo solo pone el ritmo). Las notas que rozan el acorde a un semitono pasan a la nota vecina | Nivel, de 1 a 6 voces y más brillo | Pendiente, más notas por compás, siempre arriba de la melodía para no taparla | Amplitud, de 1 a 8 notas por compás |
+
+El modo relieve sale de los experimentos de `pruebas/experimentos_sonido.js`. El nivel es la altura del agua sobre el mar y baja parejo hacia la desembocadura (su correlación con el kilómetro es 0,98 en el Paraná y 0,96 en el Mississippi). Entre dos tramos vecinos cambia una cincuentava parte de un grado de la escala, así que con el nivel en la melodía se escucha dónde estás en el río pero no cómo es cada tramo. En relieve el nivel pasa a las cuerdas, que dan el color de fondo, y la melodía toma el ancho, que sí cambia de un tramo al vecino. Con relieve, las teclas 1 y 2 siguen prendiendo y apagando el ancho y el nivel, que ahora suenan en las maderas y en las cuerdas, y el panel lo muestra.
+
+La obra está en re menor, por eso los rangos van de re a re. Los parámetros de cada modo están en `MUSICAS`, al principio de `sonido.js`.
+
+### Experimentos
+
+```bash
+node pruebas/experimentos_sonido.js            # los dos ríos
+node pruebas/experimentos_sonido.js parana     # uno solo
+```
+
+Carga `sonido.js` tal cual con un Web Audio falso que anota cada nota, simula el cuadrado quedándose en cada tramo y barriendo el cauce a 2, 6 y 20 tramos por segundo, y muestra una tabla con las tres músicas lado a lado. Mide, entre otras cosas, si la melodía ordena bien los tramos, cuánto salta dentro de un mismo tramo, si se oye el detalle local al barrir, cuántas notas rozan el acorde o quedan tapadas por el arpa y cuántas densidades distintas toma el bajo. No suena nada y tarda unos segundos.
+
 Cada tramo que cruza el cuadrado dispara una nota de la melodía en la semicorchea siguiente, así que la melodía nunca va más rápido que una nota por semicorchea (5,3 por segundo a 80 bpm) y queda siempre a tiempo con el resto de la orquesta. Para no saltear tramos cuando el mouse va rápido, `demo.js` recorre de a un píxel el camino entre un cuadro de animación y el siguiente. Si en una misma semicorchea se cruzan varios tramos suena una sola nota que los resume, con el promedio del ancho y del nivel y el máximo de la pendiente y la amplitud, para que un pico no se pierda. Mientras el cuadrado sigue dentro del mismo tramo, la melodía toca el motivo del tramo en corcheas. La forma de resumir cada característica es `RESUMEN` en `sonido.js`.
 
 El triángulo no usa grabaciones, se sintetiza con los cuatro primeros modos de vibración de una barra metálica, cada uno con su decaimiento y un batido leve, más un golpe corto de ruido. Cada cuántos tramos suena es `TRIANGULO_CADA` y su volumen `TRIANGULO_NIVEL`, los dos en `sonido.js`. Si en una semicorchea se completan los tramos de más de un golpe, suena uno solo.
@@ -87,7 +111,7 @@ Un tramo sin ningún dato no suena, pero con la interpolación ya no queda ningu
 ```
 index.html, estilos.css   interfaz
 datos/                    un .json por río más indice.json (lo genera el pipeline de scripts/)
-pruebas/                  datos de prueba, con el mismo formato (los genera pruebas/generar_pruebas.py)
+pruebas/                  datos de prueba, con el mismo formato (los genera pruebas/generar_pruebas.py), y experimentos_sonido.js
 tramos.js                 formato viejo del Paraná, la demo ya no lo usa
 mapa.js                   proyección, dibujo y campo de distancias al río (Mapa.cargar arma todo para un río)
 sonido.js                 sampler y orquesta con Web Audio

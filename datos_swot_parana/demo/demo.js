@@ -2,7 +2,7 @@
 // Si el cuadrado toca el río suena fuerte, si se aleja baja el volumen, y el paneo indica
 // hacia qué lado quedó el río.
 // Los ríos se leen de CARPETA_DATOS/indice.json y CARPETA_DATOS/<id>.json. La dirección acepta
-// ?rio=<id>, ?normalizacion=global y ?carpeta=pruebas (para usar los datos de demo/pruebas).
+// ?rio=<id>, ?normalizacion=global, ?musica=dos_octavas y ?carpeta=pruebas (para usar los datos de demo/pruebas).
 
 (function () {
   const CARPETA_DATOS = 'datos';
@@ -10,6 +10,13 @@
   const MODOS_NORMALIZACION = {
     propia: { titulo: 'Propia', detalle: 'Cada río usa todo el rango sonoro' },
     global: { titulo: 'Global', detalle: 'La misma escala para todos los ríos' },
+  };
+  // Lógicas musicales de sonido.js, en el orden en que se recorren con la tecla M
+  const TECLA_MUSICA = 'm';
+  const MODOS_MUSICA = {
+    original: { titulo: 'Original', detalle: 'El nivel mueve la melodía, la pendiente la cantidad de notas' },
+    dos_octavas: { titulo: 'Dos octavas', detalle: 'Nivel y pendiente recorren dos octavas, de re a re y de la a la' },
+    relieve: { titulo: 'Relieve', detalle: 'La melodía sigue el ancho, que cambia de tramo a tramo, y el nivel pasa a las cuerdas' },
   };
   const LADO_CUADRADO = 34;
   // El volumen cae en forma logarítmica con la distancia, como un sonido real que se aleja.
@@ -45,6 +52,9 @@
     botonNormalizacion: document.getElementById('boton-normalizacion'),
     modoNormalizacion: document.getElementById('modo-normalizacion'),
     detalleNormalizacion: document.getElementById('detalle-normalizacion'),
+    botonMusica: document.getElementById('boton-musica'),
+    modoMusica: document.getElementById('modo-musica'),
+    detalleMusica: document.getElementById('detalle-musica'),
     tramo: document.getElementById('tramo'),
     detalle: document.getElementById('detalle'),
     barraCercania: document.getElementById('barra-cercania'),
@@ -70,6 +80,7 @@
   const nombreSimple = (texto) => (texto && /^[a-z0-9_-]+$/i.test(texto) ? texto : null);
   const carpetaDatos = nombreSimple(parametros.get('carpeta')) || CARPETA_DATOS;
   let modoNormalizacion = parametros.get('normalizacion') === 'global' ? 'global' : 'propia';
+  let modoMusica = MODOS_MUSICA[parametros.get('musica')] ? parametros.get('musica') : 'original';
   let rioActual = null;
   let rios = [];
   let pedidoRio = 0;
@@ -103,6 +114,7 @@
     return {
       boton,
       valor: boton.querySelector('.valor'),
+      instrumento: boton.querySelector('.instrumento'),
       relleno: boton.querySelector('.relleno'),
     };
   }
@@ -354,6 +366,8 @@
     nueva.set('rio', rioActual);
     if (modoNormalizacion === 'global') nueva.set('normalizacion', 'global');
     else nueva.delete('normalizacion');
+    if (modoMusica !== 'original') nueva.set('musica', modoMusica);
+    else nueva.delete('musica');
     history.replaceState(null, '', `${location.pathname}?${nueva}`);
   }
 
@@ -426,6 +440,37 @@
   elementos.botonNormalizacion.addEventListener('click', alternarNormalizacion);
   mostrarNormalizacion();
 
+  // 7b. Lógica musical. Pasa a la siguiente de MODOS_MUSICA, el cambio entra en la nota siguiente.
+  function mostrarMusica() {
+    const nombres = Object.keys(MODOS_MUSICA);
+    const modo = MODOS_MUSICA[modoMusica];
+    const otro = MODOS_MUSICA[nombres[(nombres.indexOf(modoMusica) + 1) % nombres.length]];
+    elementos.modoMusica.textContent = modo.titulo;
+    // Con relieve, ancho y nivel cambian de instrumentos
+    for (const capa of CAPAS) {
+      capa.instrumento = window.Sonido.instrumentosDe(capa.nombre);
+      filasCapas[capa.nombre].instrumento.textContent = capa.instrumento;
+    }
+    elementos.detalleMusica.textContent = modo.detalle;
+    elementos.botonMusica.setAttribute(
+      'aria-label', `Música ${modo.titulo.toLowerCase()}, ${modo.detalle.toLowerCase()}. Tecla M para pasar a ${otro.titulo.toLowerCase()}`,
+    );
+  }
+
+  function alternarMusica() {
+    const nombres = Object.keys(MODOS_MUSICA);
+    modoMusica = nombres[(nombres.indexOf(modoMusica) + 1) % nombres.length];
+    window.Sonido.fijarMusica(modoMusica);
+    mostrarMusica();
+    if (rioActual) actualizarDireccion();
+    const modo = MODOS_MUSICA[modoMusica];
+    anunciar(`Música ${modo.titulo.toLowerCase()}, ${modo.detalle.toLowerCase()}`, true);
+  }
+
+  elementos.botonMusica.addEventListener('click', alternarMusica);
+  window.Sonido.fijarMusica(modoMusica);
+  mostrarMusica();
+
   // 8. Carga inicial de la orquesta y del primer río. Todo se lee con fetch, así que hace falta
   // un servidor local.
   const tituloPortada = portada.querySelector('.portada-titulo');
@@ -464,7 +509,7 @@
     dentroDelMapa = true;
     await window.Sonido.iniciar();
     indiceAnterior = -1;
-    anunciar('Mové el mouse o las flechas por el mapa. Teclas 1 a 5 para prender y apagar instrumentos, N para cambiar la normalización.', true);
+    anunciar('Mové el mouse o las flechas por el mapa. Teclas 1 a 5 para prender y apagar instrumentos, N para cambiar la normalización, M para cambiar la música.', true);
   }
 
   lienzo.addEventListener('pointermove', (evento) => {
@@ -496,6 +541,10 @@
     }
     if (evento.key.toLowerCase() === TECLA_NORMALIZACION && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
       alternarNormalizacion();
+      return;
+    }
+    if (evento.key.toLowerCase() === TECLA_MUSICA && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
+      alternarMusica();
       return;
     }
     const paso = evento.shiftKey ? PASO_FLECHA * 5 : PASO_FLECHA;

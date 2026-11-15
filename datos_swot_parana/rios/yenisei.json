@@ -1,0 +1,17 @@
+{
+  "id": "yenisei",
+  "nombre": "Yeniséi",
+  "seleccion": {
+    "modo": "topologia",
+    "desembocadura": "32100500016"
+  },
+  "ciudades": [
+    ["Nosok", 70.17, 82.35],
+    ["Karaul", 70.07, 83.18],
+    ["Ust-Port", 69.65, 84.4]
+  ],
+  "etiquetas_a_la_izquierda": [],
+  "criterios": {
+    "modo": "relativos"
+  }
+}
