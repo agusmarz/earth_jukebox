@@ -1,0 +1,84 @@
+# Publica en GitHub Pages solo datos_swot_parana/demo/ (sin pruebas/, README.md ni tramos.js).
+# Se dispara al pushear un tag demo-v* o a mano desde Actions (eligiendo un tag en "Use workflow from").
+# No corre en cada push a main para no publicar trabajo a medias.
+
+name: Deploy demo a GitHub Pages
+
+on:
+  push:
+    tags: ['demo-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  CARPETA_DEMO: datos_swot_parana/demo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: ${{ env.CARPETA_DEMO }}
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Armar el sitio (sin pruebas/, README.md ni tramos.js)
+        run: |
+          mkdir -p "$RUNNER_TEMP/sitio"
+          rsync -a \
+            --exclude='/pruebas/' --exclude='/README.md' --exclude='/tramos.js' \
+            "$CARPETA_DEMO/" "$RUNNER_TEMP/sitio/"
+
+      - name: Verificar rutas y archivos
+        working-directory: ${{ runner.temp }}/sitio
+        run: |
+          python3 - <<'EOF'
+          import json, pathlib, re, sys
+          raiz = pathlib.Path('.')
+          errores = []
+          leer = lambda p: (raiz / p).read_text(encoding='utf-8')
+          refs = re.findall(r'(?:src|href)="([^"]+)"', leer('index.html'))
+          refs += [u for u in re.findall(r"url\(['\"]?([^'\")]+)", leer('estilos.css'))
+                   if not u.startswith('data:')]
+          for r in refs:
+              if r.startswith(('/', 'http:', 'https:', '//')):
+                  errores.append(f'ruta no relativa: {r}')
+              elif not (raiz / r).is_file():
+                  errores.append(f'falta {r}')
+          muestras = re.findall(r'"archivo":\s*"([^"]+)"', leer('muestras/indice.js'))
+          errores += [f'falta muestras/{m}' for m in muestras if not (raiz / 'muestras' / m).is_file()]
+          rios = json.loads(leer('datos/indice.json'))['rios']
+          errores += [f"falta datos/{r['id']}.json" for r in rios
+                      if not (raiz / 'datos' / f"{r['id']}.json").is_file()]
+          for js in raiz.glob('*.js'):
+              if re.search(r'fetch\(\s*[\'"`]/', js.read_text(encoding='utf-8')):
+                  errores.append(f'fetch con ruta absoluta en {js}')
+          for e in errores:
+              print(f'::error::{e}')
+          print(f'{len(refs)} referencias, {len(muestras)} muestras, {len(rios)} ríos')
+          sys.exit(1 if errores else 0)
+          EOF
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/sitio
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
