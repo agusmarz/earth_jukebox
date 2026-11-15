@@ -97,9 +97,13 @@
   let rioActual = null;
   let rios = [];
   let pedidoRio = 0;
-  // Estación elegida ('' es todo el año) y estaciones del río cargado (null si no tiene)
-  let estacionActual = ESTACIONES[parametros.get('estacion')] ? parametros.get('estacion') : '';
+  // Estación elegida, que se mantiene al cambiar de río, y estaciones del río cargado (null si no tiene).
+  // Sin el parámetro arranca con la primera de ESTACIONES.
+  const ESTACION_INICIAL = Object.keys(ESTACIONES)[0];
+  let estacionActual = ESTACIONES[parametros.get('estacion')] ? parametros.get('estacion') : ESTACION_INICIAL;
   let estacionesRio = null;
+  // Estación que suena en el río cargado, o null si el río no tiene estaciones
+  const estacionDelRio = () => (estacionesRio && estacionesRio[estacionActual] ? estacionActual : null);
 
   function moverCursor(x, y) {
     if (Math.abs(x - cursor.x) < 0.5 && Math.abs(y - cursor.y) < 0.5) return;
@@ -199,7 +203,7 @@
     } else if (tramo.pasadas === 0) {
       elementos.detalle.textContent = `${encabezado}, sin pasadas buenas, valores interpolados entre los tramos vecinos`;
     } else {
-      const periodo = estacionActual ? ` en ${ESTACIONES[estacionActual].toLowerCase()}` : '';
+      const periodo = estacionDelRio() ? ` en ${ESTACIONES[estacionDelRio()].toLowerCase()}` : '';
       elementos.detalle.textContent = `${encabezado}, ${tramo.pasadas} pasadas buenas${periodo}`;
     }
     for (const capa of CAPAS) {
@@ -385,7 +389,7 @@
     else nueva.delete('normalizacion');
     if (modoMusica !== 'original') nueva.set('musica', modoMusica);
     else nueva.delete('musica');
-    if (estacionActual) nueva.set('estacion', estacionActual);
+    if (estacionDelRio()) nueva.set('estacion', estacionDelRio());
     else nueva.delete('estacion');
     history.replaceState(null, '', `${location.pathname}?${nueva}`);
   }
@@ -400,11 +404,6 @@
     }
     const estaciones = await leerEstaciones(id);
     if (pedido !== pedidoRio) return false;
-    // Los valores del año entero se guardan para poder volver a ellos
-    for (const tramo of datos.tramos) {
-      tramo.anual = {};
-      for (const campo of CAMPOS_ESTACION) tramo.anual[campo] = tramo[campo];
-    }
     const nombre = datos.nombre || id;
     window.Sonido.reiniciar();
     window.Mapa.cargar(datos, modoNormalizacion);
@@ -414,7 +413,7 @@
     cursorAnterior = null;
     estacionesRio = estaciones;
     mostrarEstaciones();
-    if (estacionActual) aplicarEstacion();
+    aplicarEstacion();
     document.title = `${nombre}, mapa sonoro`;
     elementos.titulo.textContent = nombre;
     ajustarTitulo();
@@ -438,9 +437,9 @@
     }
   });
 
-  // 6b. Estaciones del año. Cada tramo toma los valores de la estación elegida, o los del año
-  // entero. Como en la normalización, lo que está sonando no se corta, el cambio entra en la nota
-  // siguiente. Un río sin archivo de estaciones se escucha solo con el año entero.
+  // 6b. Estaciones del año. Cada tramo toma los valores de la estación elegida. Como en la
+  // normalización, lo que está sonando no se corta, el cambio entra en la nota siguiente. Un río sin
+  // archivo de estaciones suena con los valores de <id>.json, que son los del año entero.
   async function leerEstaciones(id) {
     try {
       const datos = await leerJson(`estaciones/${id}.json`);
@@ -458,10 +457,6 @@
   function mostrarEstaciones() {
     const selector = elementos.selectorEstacion;
     selector.innerHTML = '';
-    const todoElAnio = document.createElement('option');
-    todoElAnio.value = '';
-    todoElAnio.textContent = 'Todo el año';
-    selector.appendChild(todoElAnio);
     for (const [clave, titulo] of Object.entries(ESTACIONES)) {
       if (!estacionesRio || !estacionesRio[clave]) continue;
       const opcion = document.createElement('option');
@@ -469,16 +464,26 @@
       opcion.textContent = `${titulo}, ${textoMeses(estacionesRio[clave].meses)}`;
       selector.appendChild(opcion);
     }
-    if (!estacionesRio || !estacionesRio[estacionActual]) estacionActual = '';
+    if (selector.options.length === 0) {
+      const sinEstaciones = document.createElement('option');
+      sinEstaciones.textContent = 'Este río todavía no tiene estaciones';
+      selector.appendChild(sinEstaciones);
+      selector.disabled = true;
+      return;
+    }
+    // Si el río no tiene la estación elegida, pasa a la primera que tenga
+    if (!estacionDelRio()) estacionActual = selector.options[0].value;
     selector.value = estacionActual;
     selector.disabled = selector.options.length < 2;
   }
 
   // Copia en cada tramo los valores de la estación actual, y redibuja y actualiza el panel y el sonido
   function aplicarEstacion() {
-    const estacion = estacionActual && estacionesRio ? estacionesRio[estacionActual] : null;
+    if (!estacionDelRio()) return;
+    const estacion = estacionesRio[estacionDelRio()];
     for (const tramo of window.Mapa.tramos) {
-      const valores = (estacion && estacion.tramos[tramo.id]) || tramo.anual;
+      const valores = estacion.tramos[tramo.id];
+      if (!valores) continue;
       for (const campo of CAMPOS_ESTACION) tramo[campo] = valores[campo];
     }
     window.Mapa.fijarNormalizacion(modoNormalizacion);

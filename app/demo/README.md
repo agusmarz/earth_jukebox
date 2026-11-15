@@ -19,7 +19,7 @@ La dirección acepta estos parámetros, y se pueden combinar.
 | `?rio=<id>` | Abre ese río. Sin el parámetro abre el primero del índice |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
 | `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
-| `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca con todo el año |
+| `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca en verano |
 | `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
 
 Por ejemplo http://localhost:8000/?carpeta=pruebas&rio=sintetico&normalizacion=global. La dirección se actualiza sola al cambiar de río o de normalización, así se puede copiar y compartir.
@@ -45,9 +45,9 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
 
 ## Estaciones del año
 
-El selector de estación, debajo del de río, cambia los valores de cada tramo por los de esa estación: ancho, nivel, pendiente y amplitud calculados solo con las pasadas de sus tres meses, de todos los años medidos. "Todo el año" vuelve a los valores de siempre. Se usa la misma normalización propia del año entero en las cuatro estaciones, así se comparan entre sí. Como con la normalización, lo que está sonando no se corta y el cambio entra en la nota siguiente, y el grosor del río y el panel se actualizan al instante. Los tramos que en esa estación no tienen pasadas buenas se dibujan en gris y suenan con valores interpolados.
+El selector de estación, debajo del de río, cambia los valores de cada tramo por los de esa estación: ancho, nivel, pendiente y amplitud calculados solo con las pasadas de sus tres meses, de todos los años medidos. No hay opción de todo el año: si la dirección no pide una estación, el río arranca en verano, y la estación elegida se mantiene al cambiar a otro río que la tenga. Se usa la misma normalización propia del año entero en las cuatro estaciones, así se comparan entre sí. Como con la normalización, lo que está sonando no se corta y el cambio entra en la nota siguiente, y el grosor del río y el panel se actualizan al instante. Los tramos que en esa estación no tienen pasadas buenas se dibujan en gris y suenan con valores interpolados.
 
-Las estaciones se leen de `datos/estaciones/<id>.json`, que genera `scripts/procesar_rio.py <id> --pasos estaciones`. Si un río no tiene ese archivo, el selector queda deshabilitado en "Todo el año". Hoy solo lo tiene el Mississippi. El cambio es sutil, sobre todo en la amplitud, porque el nivel sobre el mar y el ancho cambian poco de una estación a otra frente a lo que cambian a lo largo del río.
+Las estaciones se leen de `datos/estaciones/<id>.json`, que genera `scripts/procesar_rio.py <id> --pasos estaciones`. Si un río no tiene ese archivo, el selector queda deshabilitado, avisa que el río todavía no tiene estaciones y el río suena con los valores del año entero de `datos/<id>.json`. Hoy solo lo tiene el Mississippi. El cambio es sutil, sobre todo en la amplitud, porque el nivel sobre el mar y el ancho cambian poco de una estación a otra frente a lo que cambian a lo largo del río.
 
 ## Normalización
 
