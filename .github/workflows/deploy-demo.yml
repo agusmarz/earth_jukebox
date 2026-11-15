@@ -36,6 +36,15 @@ jobs:
             --exclude='/pruebas/' --exclude='/README.md' --exclude='/tramos.js' \
             "$CARPETA_DEMO/" "$RUNNER_TEMP/sitio/"
 
+      # Pages sirve todo con max-age=600, así que el navegador puede combinar un index.html nuevo con
+      # scripts viejos durante 10 minutos. Con la versión del commit en cada .js y .css local, un
+      # index.html nuevo siempre pide los scripts nuevos.
+      - name: Versionar scripts y estilos
+        run: |
+          version="${GITHUB_SHA::7}"
+          sed -i -E "s#((src|href)=\"[^\":?]+\.(js|css))\"#\1?v=$version\"#g" "$RUNNER_TEMP/sitio/index.html"
+          grep -E '(src|href)=' "$RUNNER_TEMP/sitio/index.html"
+
       - name: Verificar rutas y archivos
         working-directory: ${{ runner.temp }}/sitio
         run: |
@@ -50,7 +59,7 @@ jobs:
           for r in refs:
               if r.startswith(('/', 'http:', 'https:', '//')):
                   errores.append(f'ruta no relativa: {r}')
-              elif not (raiz / r).is_file():
+              elif not (raiz / r.split('?')[0]).is_file():
                   errores.append(f'falta {r}')
           muestras = re.findall(r'"archivo":\s*"([^"]+)"', leer('muestras/indice.js'))
           errores += [f'falta muestras/{m}' for m in muestras if not (raiz / 'muestras' / m).is_file()]
