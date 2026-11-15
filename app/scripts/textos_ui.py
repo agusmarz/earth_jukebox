@@ -152,6 +152,14 @@ NAVEGACION = {
         "estacion_otono": "Autumn.",
         "estacion_invierno": "Winter.",
         "estacion_primavera": "Spring.",
+        # Al terminar la presentación de un río con estaciones (demo.js, presentarRio)
+        **{
+            f"estacion_inicio_{clave}": (
+                f"You are listening to {nombre}. To change the season, "
+                "close your left hand into a fist and turn it in a circle."
+            )
+            for clave, nombre in [("verano", "summer"), ("otono", "autumn"), ("invierno", "winter"), ("primavera", "spring")]
+        },
         "escala_propia": "Own scale.",
         "escala_global": "Global scale.",
         "musica_original": "Music: original.",
@@ -220,6 +228,13 @@ NAVEGACION = {
         "estacion_otono": "Otoño.",
         "estacion_invierno": "Invierno.",
         "estacion_primavera": "Primavera.",
+        **{
+            f"estacion_inicio_{clave}": (
+                f"Estás escuchando {nombre}. Para cambiar de estación, "
+                "cierra tu mano izquierda en un puño y gírala en círculo."
+            )
+            for clave, nombre in [("verano", "el verano"), ("otono", "el otoño"), ("invierno", "el invierno"), ("primavera", "la primavera")]
+        },
         "escala_propia": "Escala propia.",
         "escala_global": "Escala global.",
         "musica_original": "Música: original.",

@@ -85,15 +85,19 @@
   }
 
   // Corta lo que esté sonando y presenta el río. Devuelve una promesa que se resuelve cuando arranca
-  // (o cuando no pudo, por ejemplo si el navegador todavía no deja sonar sin un clic).
-  function reproducirPresentacionRio(rioId, idioma) {
+  // (o cuando no pudo, por ejemplo si el navegador todavía no deja sonar sin un clic). alTerminar, si
+  // se pasa, se llama solo si la presentación termina entera, sin que otra locución la corte.
+  function reproducirPresentacionRio(rioId, idioma, alTerminar) {
     if (!IDIOMAS[idioma]) idioma = 'es';
     detener();
     const miPedido = pedido;
     ultima = { rioId, idioma };
     atenuar(true);
     const texto = TEXTOS[idioma] && TEXTOS[idioma][rioId];
-    return reproducir(`audios/${idioma}/${rioId}.mp3`, texto, idioma, miPedido, () => atenuar(false));
+    return reproducir(`audios/${idioma}/${rioId}.mp3`, texto, idioma, miPedido, () => {
+      atenuar(false);
+      if (alTerminar) alTerminar();
+    });
   }
 
   // Corta lo que esté sonando y dice una locución de la interfaz, o varias seguidas (un arreglo de
@@ -119,8 +123,8 @@
     return siguiente(0);
   }
 
-  function repetir() {
-    if (ultima) return reproducirPresentacionRio(ultima.rioId, ultima.idioma);
+  function repetir(alTerminar) {
+    if (ultima) return reproducirPresentacionRio(ultima.rioId, ultima.idioma, alTerminar);
     return Promise.resolve();
   }
 

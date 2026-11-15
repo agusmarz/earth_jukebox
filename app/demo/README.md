@@ -65,6 +65,8 @@ indice.json  {"rios": [{"id": "parana", "nombre": "Paraná"}]}
 
 Al empezar a escuchar y cada vez que se elige otro río, una voz dice en inglés dónde está el río, qué países recorre y cuánto mide. Es una voz neuronal pregrabada, `audios/en/<id>.mp3` (en-US-AvaNeural), que genera `scripts/generar_voces.py` con edge-tts junto con `audios/textos.js`. El script también genera las versiones en castellano de `audios/es/`, que la interfaz ya no usa. Si un mp3 no carga, `locucion.js` dice el mismo texto con la voz del navegador. Si se cambia de río antes de que termine, la presentación anterior se corta. Mientras habla, la orquesta baja a un quinto de su volumen y vuelve al terminar.
 
+Si la presentación termina sin que nada la corte y el río tiene estaciones, la voz dice qué estación está sonando y que se cambia cerrando la mano izquierda en un puño y girándola (`audios/en/ui/estacion_inicio_<estación>.mp3`). Cada vez que la estación cambia desde el selector (mouse, teclado o el giro del puño izquierdo), una nota de voz dice la estación nueva (`estacion_<estación>`).
+
 El botón Replay del panel (o la tecla R) repite la presentación. `locucion.js` usa un elemento de audio y no `fetch`, así que funciona también desde `file://`, aunque el resto de la demo sigue necesitando el servidor local.
 
 ## Comandos de voz

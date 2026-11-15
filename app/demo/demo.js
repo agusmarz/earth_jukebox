@@ -547,11 +547,15 @@
     }
   }
 
+  // Cambio desde el selector: mouse, teclado o el giro del puño izquierdo (manos.js dispara este
+  // change). Una nota de voz dice a qué estación cambió. Los comandos de voz pasan por fijarEstacion y
+  // voz.js ya responde con el mismo clip
   elementos.selectorEstacion.addEventListener('change', () => {
     estacionActual = elementos.selectorEstacion.value;
     aplicarEstacion();
     actualizarDireccion();
     anunciar(ESTACIONES[estacionActual], true);
+    if (estacionDelRio() && iniciado) window.Locucion.decir(`estacion_${estacionDelRio()}`, IDIOMA_LOCUCION);
   });
 
   // Elige una estación sin pasar por el selector (comandos de voz). false si el río no la tiene.
@@ -620,9 +624,16 @@
   mostrarModos();
 
   // 7c. Presentación hablada del río, en inglés. Suena al empezar a escuchar y cada vez que se abre
-  // un río, y mientras habla la orquesta baja (locucion.js le pide a sonido.js que atenúe).
+  // un río, y mientras habla la orquesta baja (locucion.js le pide a sonido.js que atenúe). Si termina
+  // sin que nada la corte y el río tiene estaciones, dice cuál está sonando y cómo cambiarla con la
+  // mano izquierda (clips estacion_inicio_<estación>).
   function presentarRio() {
-    if (iniciado && rioActual && abierto) window.Locucion.reproducirPresentacionRio(rioActual, IDIOMA_LOCUCION);
+    if (!iniciado || !rioActual || !abierto) return;
+    const rio = rioActual;
+    window.Locucion.reproducirPresentacionRio(rio, IDIOMA_LOCUCION, () => {
+      const estacion = estacionDelRio();
+      if (estacion && abierto && rioActual === rio) window.Locucion.decir(`estacion_inicio_${estacion}`, IDIOMA_LOCUCION);
+    });
   }
 
   function repetirPresentacion() {
