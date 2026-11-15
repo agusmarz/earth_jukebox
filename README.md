@@ -1,6 +1,8 @@
 # Earth Jukebox · The Melody of Water
 
-Our entry for The Earth Information Jukebox challenge of the NASA Space Apps Challenge 2026. The Melody of Water is a web app for listening to rivers, designed for blind and low-vision people. It uses measurements from the SWOT satellite (NASA and CNES): each feature of the river is played by a family of instruments in an orchestra. You explore the river by moving your hand in front of the camera, change the season by turning your fist, and control everything with your voice.
+Our entry for The Earth Information Jukebox challenge of the NASA Space Apps Challenge 2026. The project starts from the [EIC visualization](https://svs.gsfc.nasa.gov/5618/) by NASA's Scientific Visualization Studio, which is based on data from the SWOT mission, run by NASA and the French space agency CNES, but focuses on only five rivers. To make the experience more complete, we used the same source and gathered SWOT data for the other rivers with the largest discharge in the world. We got it through PO.DAAC's [Hydrocron](https://podaac.github.io/hydrocron/) API.
+
+The Melody of Water is a web app for listening to rivers, designed for blind and low-vision people. Each feature of the river is played by a family of instruments in an orchestra. You explore the river by moving your hand in front of the camera, change the season by turning your fist, and control everything with your voice.
 
 There are ten rivers, roughly the ones with the largest mean discharge in the world, not counting tributaries: Amazon, Congo, Ganges, Orinoco, Yangtze, Yenisei, Paraná, Lena, Mississippi and Mekong. The selection criteria and their caveats are in [Qué ríos hay y por qué](app/README.md#qué-ríos-hay-y-por-qué) (in Spanish).
 
