@@ -1,4 +1,4 @@
-# Publica en GitHub Pages solo datos_swot_parana/demo/ (sin pruebas/, README.md ni tramos.js).
+# Publica en GitHub Pages solo app/demo/ (sin pruebas/, README.md ni tramos.js).
 # Se dispara al pushear un tag demo-v* o a mano desde Actions (eligiendo un tag en "Use workflow from").
 # No corre en cada push a main para no publicar trabajo a medias.
 
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  CARPETA_DEMO: datos_swot_parana/demo
+  CARPETA_DEMO: app/demo
 
 jobs:
   build:

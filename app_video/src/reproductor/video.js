@@ -1,5 +1,5 @@
 // Reproduce el tramo del video del EIC que corresponde a cada río.
-// Si existe el recorte local (app/rios/<id>.webm, generado con los scripts
+// Si existe el recorte local (app_video/rios/<id>.webm, generado con los scripts
 // de preprocesamiento) usa ese. Si no, reproduce el tramo directo desde la NASA.
 // El video va siempre en silencio porque el sonido lo pone la sonificación.
 

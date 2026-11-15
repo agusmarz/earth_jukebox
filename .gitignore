@@ -3,5 +3,5 @@ preprocesamiento/hojas/
 __pycache__/
 node_modules/
 
-datos_swot_parana/scripts/.cache_vsco/
-datos_swot_parana/datos/cache_sword/
+app/scripts/.cache_vsco/
+app/datos/cache_sword/

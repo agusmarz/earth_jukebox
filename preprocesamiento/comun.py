@@ -7,8 +7,8 @@ from pathlib import Path
 
 CARPETA = Path(__file__).resolve().parent
 RAIZ = CARPETA.parent
-ARCHIVO_RIOS = RAIZ / "app" / "src" / "datos" / "rios.json"
-CARPETA_CLIPS = RAIZ / "app" / "rios"
+ARCHIVO_RIOS = RAIZ / "app_video" / "src" / "datos" / "rios.json"
+CARPETA_CLIPS = RAIZ / "app_video" / "rios"
 CARPETA_FUENTE = CARPETA / "fuente"
 NOMBRE_ORIGINAL = "20260305_SVS14990_SWOT_RIVERS_DATA_VIS_3840x2160_60fps_ENGLISH_FINALCUT_GAW.webm"
 VIDEO_FUENTE = CARPETA_FUENTE / "svs14990.webm"

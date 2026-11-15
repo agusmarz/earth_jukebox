@@ -117,7 +117,7 @@ mapa.js                   proyección, dibujo y campo de distancias al río (Map
 sonido.js                 sampler y orquesta con Web Audio
 demo.js                   carga de ríos, selector, normalización, cuadrado, panel y teclado
 muestras/                 grabaciones de VSCO 2 CE e índice (lo genera scripts/preparar_muestras.py)
-fuentes/                  Archivo, copiada de app/fuentes
+fuentes/                  Archivo, copiada de app_video/fuentes
 ```
 
 ## Cómo regenerar los datos

@@ -1,5 +1,5 @@
 """Corta el tramo de cada río, aplica el recorte espacial si está definido
-en rios.json y guarda clips livianos en app/rios/<id>.webm sin audio.
+en rios.json y guarda clips livianos en app_video/rios/<id>.webm sin audio.
 
 Cuando existen estos clips la app los usa en lugar de reproducir el video
 4K directo desde la NASA, así anda más fluido y sin depender de internet.
