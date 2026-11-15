@@ -74,6 +74,7 @@ scripts/
   buscar_desembocadura.py tramo de desembocadura de un río, por nombre
   probar_regresion.py     comprueba que el Paraná da lo mismo que antes de la reorganización
   preparar_muestras.py    muestras orquestales de la demo
+  generar_voces.py        locuciones de presentación de cada río (demo/audios/es y en), con edge-tts
   swot/                   paquete con la lógica, módulos hydrocron, sword, metricas, mapas, demo y pasos
 ```
 
