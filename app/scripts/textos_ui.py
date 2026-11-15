@@ -7,15 +7,31 @@ mismo id (python generar_voces_ui.py --todos, o borrando ese mp3).
 
 TUTORIAL: los clips tutorial_* quedan creados para que quien implemente el tutorial (otra persona u
 otro LLM) los use tal cual, sin generar audios nuevos. Son la locución de las siete pantallas de
-Tutorial.pdf, en orden, una por pantalla. El texto original es el castellano; el inglés es su
-traducción y es el idioma que usa la app por defecto. Ver demo/audios/README.md.
+Tutorial.pdf, en orden, una por pantalla, más tutorial_0_parana (presentación de la app con el
+Paraná de ejemplo) y tutorial_8_fin (cierre), que no están en el PDF. El texto original es el
+castellano; el inglés es su traducción y es el idioma que usa la app por defecto. Ver
+demo/audios/README.md. Los usa demo/tutorial.js.
 
-Las frases marcadas PENDIENTE completan texto que en el PDF viene cortado ("..."); hay que
-confirmarlas con el autor del tutorial y, si cambian, regenerar esos dos ids en los dos idiomas.
+Las pantallas 3 y 4 completan texto que en el PDF viene cortado ("..."). Desde la pantalla 3 el
+Paraná suena cuando la persona acerca el cuadrado con la mano (nunca solo), y esos textos lo
+explican e invitan a recorrerlo. Los instrumentos son los de la música Relieve (la de
+la app por defecto): el ancho va a las maderas, que tocan la melodía, y el nivel a las cuerdas.
 """
 
 TEXTOS_UI = {
     "en": {
+        # 0. Presentación del tutorial y de la app, con el Paraná de ejemplo (no está en Tutorial.pdf)
+        "tutorial_0_parana": (
+            "Welcome to the tutorial. We will learn with the Paraná River, in South America, "
+            "which flows south past the cities of Santa Fe and Rosario. "
+            "The SWOT satellite, from NASA and CNES, measures every stretch of the river: its width, its water level, "
+            "its slope, and its range, that is, how much the water rises and falls. "
+            "Here, each of those measurements is played by a group of instruments, so the river sounds like an orchestra, "
+            "and you are its conductor. You will conduct it with your hands: "
+            "your left hand moves through time, and your right hand moves along the river and chooses what you hear. "
+            "In each step, try the gesture: a short chime tells you the camera recognized it. "
+            "Say next to continue, back to return, or repeat to hear a step again."
+        ),
         # 1. Las dos manos
         "tutorial_1_manos": (
             "Stand in front of the camera and raise both hands. "
@@ -27,34 +43,67 @@ TEXTOS_UI = {
             "Seasons, with your left hand. "
             "Close your hand and turn it gently to change the season."
         ),
-        # 3. Espacialmente, mano derecha. PENDIENTE: "toward another part of the river" completa el corte del PDF
+        # 3. Espacialmente, mano derecha. Completa el corte del PDF: el Paraná suena y se invita a recorrerlo
         "tutorial_3_espacio": (
             "Moving through space, with your right hand. "
-            "Move your hand in the air: up, down, left, or right. "
-            "Each direction will guide you toward another part of the river."
+            "Move your hand in the air, up, down, left, or right, and a square travels over the map of the Paraná. "
+            "You make the music: the river stays silent until you bring the square close to it. "
+            "As you approach, the orchestra starts to play, louder the closer you get, and your headphones tell you on which side the river is. "
+            "At every point, the music follows that stretch of the river: its width, its water level, its slope, and its range. "
+            "So as you travel along it, the music changes with the river. Hold still, and the orchestra holds its chord. "
+            "Find the river, move up from Rosario toward Santa Fe, and feel it. Take your time, and say next when you are ready."
         ),
-        # 4. Filtros, pulgar. PENDIENTE: "with the shape of your fingers" y la frase del pulgar completan el PDF
+        # 4. Filtros, pulgar. Completa el corte del PDF ("with the shape of your fingers")
         "tutorial_4_pulgar": (
             "Filters, with your right hand. "
-            "To filter which data you are hearing, you can use different gestures with the shape of your fingers. "
-            "Finger one, your thumb, represents the width of the river: you will hear the strings."
+            "To filter which data you are hearing, you can use different gestures with the shape of your fingers: "
+            "a raised finger brings its instruments in, a lowered finger takes them out. "
+            "Finger one, your thumb, represents the width of the river: you will hear the woodwinds playing the melody. "
+            "Bring the square onto the river, close your hand, raise only your thumb, and listen."
         ),
         # 5. Filtros, índice
         "tutorial_5_indice": (
-            "Finger two, your index finger, represents the water level: you will hear the woodwinds."
+            "Finger two, your index finger, represents the water level: you will hear the strings. "
+            "Raise your index finger and listen."
         ),
         # 6. Filtros, medio
         "tutorial_6_medio": (
-            "Finger three, your middle finger, represents the slope of the water: "
-            "you will hear the harp and timpani."
+            "Finger three, your middle finger, represents the slope of the water: you will hear the harp and timpani. "
+            "Raise your middle finger and listen."
         ),
         # 7. Filtros, anular
         "tutorial_7_anular": (
-            "Finger four, your ring finger, represents the range: "
-            "you will hear the double basses and horns."
+            "Finger four, your ring finger, represents the range: you will hear the double basses and horns. "
+            "Raise your ring finger and listen. Then try raising several fingers at once."
         ),
+        # 8. Cierre, con el Paraná de ejemplo (no está en Tutorial.pdf)
+        "tutorial_8_fin": (
+            "That's all you need. Let's put it together on the Paraná. "
+            "A square follows your right hand over the map. When it touches the river, the orchestra plays loud; "
+            "as it moves away, the music fades, and the sound in your headphones tells you on which side the river is. "
+            "Move up, from Rosario toward Santa Fe, and listen to how the river changes. "
+            "Hold your hand still and the orchestra holds its chord. "
+            "Raise or lower your fingers to bring the instruments in and out, and turn your closed left fist to change the season. "
+            "You can also speak at any time: hold the space bar and say help. "
+            "Say next to choose your river."
+        ),
+        # Respuestas del tutorial
+        "tutorial_manos_listas": "Both hands are in view. Say next to continue.",
+        "tutorial_falta_mano": "I can't see both hands yet. Raise both hands in front of the camera, with your palms open.",
+        "tutorial_saltar": "Skipping the tutorial.",
     },
     "es": {
+        "tutorial_0_parana": (
+            "Bienvenido al tutorial. Vamos a aprender con el río Paraná, en Sudamérica, "
+            "que baja hacia el sur pasando por las ciudades de Santa Fe y Rosario. "
+            "El satélite SWOT, de la NASA y el CNES, mide cada tramo del río: su ancho, el nivel del agua, "
+            "su pendiente y su amplitud, es decir, cuánto sube y baja el agua. "
+            "Aquí, cada una de esas medidas la toca un grupo de instrumentos, así el río suena como una orquesta, "
+            "y tú eres quien la dirige. La vas a dirigir con las manos: "
+            "la mano izquierda recorre el tiempo, y la mano derecha recorre el río y elige qué escuchas. "
+            "En cada paso, prueba el gesto: un sonido corto te avisa que la cámara lo reconoció. "
+            "Di siguiente para continuar, atrás para volver, o repetir para escuchar un paso de nuevo."
+        ),
         "tutorial_1_manos": (
             "Posiciónate frente a la cámara y levanta ambas manos. "
             "Mano izquierda: tiempo. Mano derecha: espacialidad y filtros. "
@@ -64,27 +113,47 @@ TEXTOS_UI = {
             "Estaciones, con la mano izquierda. "
             "Cierra tu mano y gira suavemente para cambiar de estación."
         ),
-        # PENDIENTE: "hacia otra parte del río" completa el corte del PDF
         "tutorial_3_espacio": (
             "Espacialmente, con la mano derecha. "
-            "Mueve tu mano en el aire hacia arriba, abajo, izquierda o derecha. "
-            "Cada dirección te guiará hacia otra parte del río."
+            "Mueve tu mano en el aire, hacia arriba, abajo, izquierda o derecha, y un cuadrado recorrerá el mapa del Paraná. "
+            "La música la generas tú: el río está en silencio hasta que acercas el cuadrado. "
+            "A medida que te acercas, la orquesta empieza a sonar, más fuerte cuanto más cerca estás, y tus auriculares te dicen de qué lado está el río. "
+            "En cada punto, la música sigue a ese tramo del río: su ancho, el nivel del agua, su pendiente y su amplitud. "
+            "Así, mientras lo recorres, la música cambia con el río. Si te quedas quieto, la orquesta sostiene su acorde. "
+            "Encuentra el río, sube de Rosario hacia Santa Fe, y siéntelo. Tómate tu tiempo, y di siguiente cuando estés listo."
         ),
-        # PENDIENTE: "la forma de tus dedos" y la frase del pulgar completan el PDF
         "tutorial_4_pulgar": (
             "Filtros, con la mano derecha. "
-            "Para filtrar qué datos estás escuchando podrás utilizar diferentes gestos, la forma de tus dedos. "
-            "El dedo 1, tu pulgar, representa el ancho del río, escucharás las cuerdas."
+            "Para filtrar qué datos estás escuchando podrás utilizar diferentes gestos, la forma de tus dedos: "
+            "un dedo levantado hace entrar sus instrumentos, un dedo bajo los saca. "
+            "El dedo 1, tu pulgar, representa el ancho del río, escucharás las maderas tocando la melodía. "
+            "Lleva el cuadrado sobre el río, cierra la mano, levanta solo el pulgar, y escucha."
         ),
         "tutorial_5_indice": (
-            "El dedo 2, tu índice, representa el nivel del agua, escucharás las maderas."
+            "El dedo 2, tu índice, representa el nivel del agua, escucharás las cuerdas. "
+            "Levanta el índice y escucha."
         ),
         "tutorial_6_medio": (
-            "El dedo 3, tu dedo medio, representa la pendiente del agua, escucharás el arpa y el timbal."
+            "El dedo 3, tu dedo medio, representa la pendiente del agua, escucharás el arpa y el timbal. "
+            "Levanta el dedo medio y escucha."
         ),
         "tutorial_7_anular": (
-            "El dedo 4, tu anular, representa la amplitud, escucharás los contrabajos y los cornos."
+            "El dedo 4, tu anular, representa la amplitud, escucharás los contrabajos y los cornos. "
+            "Levanta el anular y escucha. Después prueba levantar varios dedos a la vez."
         ),
+        "tutorial_8_fin": (
+            "Eso es todo lo que necesitas. Juntemos todo en el Paraná. "
+            "Un cuadrado sigue a tu mano derecha sobre el mapa. Cuando toca el río, la orquesta suena fuerte; "
+            "a medida que se aleja, la música se apaga, y el sonido en tus auriculares te dice de qué lado quedó el río. "
+            "Sube, de Rosario hacia Santa Fe, y escucha cómo cambia el río. "
+            "Si dejas la mano quieta, la orquesta sostiene su acorde. "
+            "Levanta o baja los dedos para que entren y salgan los instrumentos, y gira el puño izquierdo cerrado para cambiar de estación. "
+            "También puedes hablar en cualquier momento: mantén apretada la barra espaciadora y di ayuda. "
+            "Di siguiente para elegir tu río."
+        ),
+        "tutorial_manos_listas": "Las dos manos están a la vista. Di siguiente para continuar.",
+        "tutorial_falta_mano": "Todavía no veo las dos manos. Levanta las dos manos frente a la cámara, con las palmas abiertas.",
+        "tutorial_saltar": "Saltamos el tutorial.",
     },
 }
 

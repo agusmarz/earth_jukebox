@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="estilos.css">
   <link rel="stylesheet" href="manos.css">
   <link rel="stylesheet" href="voz.css">
+  <link rel="stylesheet" href="tutorial.css">
 </head>
 <body>
 
@@ -33,17 +34,51 @@
     </button>
   </main>
 
-  <!-- 2. Rivers menu -->
+  <!-- 2. Tutorial (tutorial.js), entre la bienvenida y el menú -->
+  <main id="vista-tutorial" class="vista" aria-labelledby="titulo-tutorial" hidden>
+    <div class="trama" aria-hidden="true"></div>
+    <div class="tutorial-progreso" aria-hidden="true"><span class="tutorial-progreso-relleno"></span></div>
+
+    <p class="logo tutorial-logo" aria-hidden="true">The melody<br>of water</p>
+    <h1 id="titulo-tutorial" class="tutorial-etiqueta">Tutorial</h1>
+
+    <div class="tutorial-pastillas">
+      <p class="tutorial-pastilla" data-estado="camara"><span class="tutorial-punto" aria-hidden="true"></span><span class="tutorial-pastilla-texto">Camera off</span></p>
+      <p class="tutorial-pastilla" data-estado="micro"><span class="tutorial-punto" aria-hidden="true"></span><span class="tutorial-pastilla-texto">Micro off</span></p>
+    </div>
+
+    <button class="tutorial-saltar" type="button" aria-label="Skip the tutorial and go to the rivers. Escape">Skip <span aria-hidden="true">→</span></button>
+
+    <section class="tutorial-escena" aria-live="off"></section>
+
+    <!-- Acá se muda el mapa del tablero (#contenedor-mapa) en los pasos con río: es el Paraná de verdad -->
+    <div class="tutorial-mapa" hidden></div>
+
+    <div class="tutorial-camara" aria-hidden="true">
+      <canvas class="tutorial-camara-lienzo"></canvas>
+      <p class="tutorial-camara-aviso">Camera off<br><strong>Press C</strong></p>
+    </div>
+
+    <div class="tutorial-barra">
+      <button class="tutorial-repetir" type="button" aria-label="Replay this step. Key R" title="Replay (R)">
+        <span class="icono-tutorial" aria-hidden="true"><span class="cuadrado"></span><span class="triangulo"></span></span>
+      </button>
+      <p class="tutorial-texto"></p>
+      <button class="tutorial-siguiente" type="button">Next</button>
+    </div>
+  </main>
+
+  <!-- 3. Rivers menu -->
   <main id="vista-rios" class="vista" aria-labelledby="titulo-rios" hidden>
     <div class="rios-fondo" aria-hidden="true"></div>
     <div class="trama trama-clara" aria-hidden="true"></div>
 
     <h1 id="titulo-rios" class="logo logo-claro">The<br>melody<br>of water</h1>
 
-    <button class="boton-tutorial" type="button" aria-disabled="true" title="The tutorial is coming soon">
+    <a class="boton-tutorial" href="#tutorial" aria-label="Tutorial: learn how to play a river, with the Paraná as example">
       <span class="icono-tutorial" aria-hidden="true"><span class="cuadrado"></span><span class="triangulo"></span></span>
       Tutorial
-    </button>
+    </a>
 
     <div class="planisferio" id="planisferio">
       <svg id="rios-mundo" class="rios-mundo" aria-hidden="true"></svg>
@@ -56,7 +91,7 @@
     </button>
   </main>
 
-  <!-- 3. River dashboard -->
+  <!-- 4. River dashboard -->
   <main id="vista-rio" class="vista" aria-labelledby="titulo-rio" hidden>
     <div id="contenedor-mapa" class="contenedor-mapa">
       <canvas id="mapa" aria-label="River map. Move the square with the mouse or the arrow keys to listen to the river." role="img"></canvas>
@@ -151,6 +186,7 @@
   <script src="app.js"></script>
   <script src="ambiente.js"></script>
   <script src="manos.js"></script>
+  <script src="tutorial.js"></script>
   <script src="voz_alias.js"></script>
   <script src="voz_intenciones.js"></script>
   <script src="voz.js"></script>

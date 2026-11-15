@@ -26,10 +26,11 @@
 
   // Qué acciones tienen sentido en cada vista
   const VALIDAS = {
-    bienvenida: ['NEXT', 'OPEN_RIVER', 'LIST_RIVERS', 'HELP', 'STOP', 'YES', 'NO'],
-    rios: ['BACK', 'GO_HOME', 'OPEN_RIVER', 'LIST_RIVERS', 'HELP', 'STOP', 'YES', 'NO'],
+    bienvenida: ['NEXT', 'OPEN_RIVER', 'LIST_RIVERS', 'TUTORIAL', 'HELP', 'STOP', 'YES', 'NO'],
+    tutorial: ['NEXT', 'BACK', 'SKIP', 'REPEAT_INTRO', 'HELP', 'GO_HOME', 'OPEN_RIVER', 'LIST_RIVERS', 'TUTORIAL', 'STOP', 'YES', 'NO'],
+    rios: ['BACK', 'GO_HOME', 'OPEN_RIVER', 'LIST_RIVERS', 'TUTORIAL', 'HELP', 'STOP', 'YES', 'NO'],
     rio: ['NEXT', 'BACK', 'GO_HOME', 'OPEN_RIVER', 'LIST_RIVERS', 'SET_LAYER', 'SET_SEASON', 'SET_SCALE',
-      'SET_MUSIC', 'REPEAT_INTRO', 'ZOOM', 'STATUS', 'HELP', 'STOP', 'YES', 'NO'],
+      'SET_MUSIC', 'REPEAT_INTRO', 'ZOOM', 'STATUS', 'TUTORIAL', 'HELP', 'STOP', 'YES', 'NO'],
   };
 
   // 1. Normalización. Devuelve las palabras de la frase.
@@ -180,7 +181,7 @@
   }
 
   // entrada: un texto o las alternativas del reconocedor, de la más probable a la menos.
-  // contexto: { vista: 'bienvenida' | 'rios' | 'rio', pendiente: hay una pregunta sí/no, ordenRios }
+  // contexto: { vista: 'bienvenida' | 'tutorial' | 'rios' | 'rio', pendiente: hay una pregunta sí/no, ordenRios }
   function interpretar(entrada, contexto = {}) {
     const alternativas = (Array.isArray(entrada) ? entrada : [entrada]).filter((t) => t && String(t).trim());
     let elegido = sinIntencion(alternativas[0] || '', 0);

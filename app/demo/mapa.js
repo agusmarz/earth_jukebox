@@ -225,6 +225,24 @@
     aplicarVista();
   }
 
+  // Zoom y centro para que entren las ciudades nombradas, con holgura alrededor. Lo usa el
+  // tutorial para mostrar el tramo del Paraná entre Rosario y Santa Fe. false si no las encuentra.
+  function encuadrarCiudades(nombres, holgura = 2.4) {
+    if (!rio) return false;
+    const puntos = rio.ciudades.filter((c) => nombres.includes(c.nombre)).map((c) => c.punto);
+    if (puntos.length < 2) return false;
+    const xs = puntos.map((p) => p[0]);
+    const ys = puntos.map((p) => p[1]);
+    const ancho = Math.max(1e-6, (Math.max(...xs) - Math.min(...xs)) * holgura);
+    const alto = Math.max(1e-6, (Math.max(...ys) - Math.min(...ys)) * holgura);
+    const { anchoArea, altoArea } = area();
+    vista.zoom = Math.min(anchoArea / ancho, altoArea / alto) / vista.escalaBase;
+    vista.centroX = (Math.min(...xs) + Math.max(...xs)) / 2;
+    vista.centroY = (Math.min(...ys) + Math.max(...ys)) / 2;
+    aplicarVista();
+    return true;
+  }
+
   function centrarEn(mx, my) {
     if (!rio) return;
     vista.centroX = mx;
@@ -362,7 +380,7 @@
 
   window.Mapa = {
     cargar, fijarNormalizacion, ajustar, consultar, dibujarBase, resaltarTramo,
-    fijarZoom, centrarEn, dibujarMinimapa, desdeMinimapa,
+    fijarZoom, centrarEn, encuadrarCiudades, dibujarMinimapa, desdeMinimapa,
     get zoom() { return vista.zoom; },
     // Rectángulo del lienzo donde entra el río, sin lo que tapan el panel, el logo y las fuentes, en
     // píxeles CSS. Lo usa manos.js para que la zona de la mano cubra justo esa parte

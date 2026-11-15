@@ -1,17 +1,19 @@
 // Navegación entre las tres vistas, con el hash de la dirección:
 //   (sin hash)   bienvenida
+//   #tutorial    tutorial (tutorial.js), después de la bienvenida y desde el botón del menú
 //   #rios        menú de ríos sobre el planisferio
 //   #rio/<id>    tablero del río (demo.js)
 // La dirección vieja ?rio=<id> abre directo el tablero de ese río.
 // Se maneja con mouse, teclado y comandos de voz (voz.js, con la barra espaciadora apretada).
 // De la bienvenida no se pasa sin prender la cámara del control con las manos (manos.js, tecla C
 // o clic en la pestaña de abajo). Una dirección directa a otra vista también arranca en la bienvenida.
-// El botón Tutorial todavía no hace nada.
+// De la bienvenida se pasa al tutorial, y del tutorial (al terminarlo o salteándolo) al menú.
 
 (function () {
   const SVG = 'http://www.w3.org/2000/svg';
   const vistas = {
     bienvenida: document.getElementById('vista-bienvenida'),
+    tutorial: document.getElementById('vista-tutorial'),
     rios: document.getElementById('vista-rios'),
     rio: document.getElementById('vista-rio'),
   };
@@ -116,6 +118,7 @@
   function ruta() {
     const hash = location.hash.replace(/^#/, '');
     if (hash === 'rios') return { vista: 'rios' };
+    if (hash === 'tutorial') return { vista: 'tutorial' };
     const rio = hash.match(/^rio\/([a-z0-9_-]+)$/i);
     if (rio) return { vista: 'rio', id: rio[1] };
     return { vista: 'bienvenida' };
@@ -136,12 +139,16 @@
       return;
     }
     if (vistaActual === 'rio' && vista !== 'rio') window.Tablero.cerrar();
+    if (vistaActual === 'tutorial' && vista !== 'tutorial' && window.Tutorial) window.Tutorial.cerrar();
     for (const [nombre, elemento] of Object.entries(vistas)) elemento.hidden = nombre !== vista;
     const anterior = vistaActual;
     vistaActual = vista;
     if (vista === 'bienvenida') {
       document.title = 'The Melody of Water';
       if (anterior) document.getElementById('boton-continuar').focus({ preventScroll: true });
+    } else if (vista === 'tutorial') {
+      document.title = 'Tutorial · The Melody of Water';
+      if (anterior !== 'tutorial' && window.Tutorial) window.Tutorial.abrir();
     } else if (vista === 'rios') {
       document.title = 'Rivers · The Melody of Water';
       ubicarEtiquetas();
@@ -193,7 +200,7 @@
     pestana.dataset.camara = estado;
     if (estado === 'prendida') {
       pestana.innerHTML = 'Say <strong>“NEXT”</strong> to continue';
-      pestana.setAttribute('aria-label', 'Camera on. Continue to the rivers');
+      pestana.setAttribute('aria-label', 'Camera on. Continue to the tutorial');
     } else if (estado === 'prendiendo') {
       pestana.innerHTML = 'Turning on the <strong>camera</strong>…';
       pestana.setAttribute('aria-label', 'Turning on the camera');
@@ -221,7 +228,7 @@
 
   // 5. Entrada con mouse y teclado
   pestana.addEventListener('click', () => {
-    if (camaraLista()) ir('rios');
+    if (camaraLista()) ir('tutorial');
     else if (window.Manos && !window.Manos.encendida) window.Manos.encender();
   });
   contenedorEtiquetas.addEventListener('click', (evento) => {
@@ -240,7 +247,7 @@
       // El Espacio no: mantenerlo apretado es para hablar (voz.js)
       if (['Enter', 'ArrowRight'].includes(evento.key) || evento.key.toLowerCase() === 'n') {
         evento.preventDefault();
-        ir('rios');
+        ir('tutorial');
       }
     } else if (vistaActual === 'rios') {
       if (evento.key === 'Escape') {

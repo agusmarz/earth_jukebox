@@ -89,6 +89,9 @@
 
   let abierto = false; // el tablero está en pantalla
   let iniciado = false; // el audio arrancó (hace falta un clic o una tecla)
+  // Abierto desde el tutorial (tutorial.js monta el mapa en su pantalla): sin presentación hablada,
+  // sin tocar la dirección, y en silencio hasta que la persona mueve el cuadrado (mano o mouse)
+  let modoTutorial = false;
   let orquestaLista = false;
   let errorOrquesta = null;
   let dentroDelMapa = false;
@@ -109,7 +112,7 @@
   const nombreSimple = (texto) => (texto && /^[a-z0-9_-]+$/i.test(texto) ? texto : null);
   const carpetaDatos = nombreSimple(parametros.get('carpeta')) || 'datos';
   let modoNormalizacion = parametros.get('normalizacion') === 'global' ? 'global' : 'propia';
-  let modoMusica = MODOS_MUSICA[parametros.get('musica')] ? parametros.get('musica') : 'original';
+  let modoMusica = MODOS_MUSICA[parametros.get('musica')] ? parametros.get('musica') : 'relieve';
   let rioActual = null;
   let rios = [];
   let pedidoRio = 0;
@@ -193,11 +196,12 @@
     lienzo.style.width = `${width}px`;
     lienzo.style.height = `${height}px`;
     // Arriba deja libre el logo y abajo las fuentes, que están sobre el mapa
+    // Con el tablero escondido (mapa montado en el tutorial) el logo y las fuentes no ocupan lugar
     const logo = elementos.botonVolver.getBoundingClientRect();
     const fuente = vistaRio.querySelector('.fuente').getBoundingClientRect();
     window.Mapa.ajustar(anchoUtil(width), height, {
-      arriba: Math.max(RELLENO_MAPA, logo.bottom + 20),
-      abajo: Math.max(RELLENO_MAPA, height - fuente.top + 12),
+      arriba: logo.height ? Math.max(RELLENO_MAPA, logo.bottom + 20) : RELLENO_MAPA,
+      abajo: fuente.height ? Math.max(RELLENO_MAPA, height - fuente.top + 12) : RELLENO_MAPA,
       izquierda: RELLENO_MAPA,
       derecha: RELLENO_MAPA,
     }, width);
@@ -438,11 +442,12 @@
 
   // Los modos van en la dirección, junto con el hash que maneja app.js
   function actualizarDireccion() {
+    if (modoTutorial) return;
     const nueva = new URLSearchParams(location.search);
     nueva.delete('rio');
     if (modoNormalizacion === 'global') nueva.set('normalizacion', 'global');
     else nueva.delete('normalizacion');
-    if (modoMusica !== 'original') nueva.set('musica', modoMusica);
+    if (modoMusica !== 'relieve') nueva.set('musica', modoMusica);
     else nueva.delete('musica');
     if (estacionDelRio() && estacionDelRio() !== ESTACION_INICIAL) nueva.set('estacion', estacionDelRio());
     else nueva.delete('estacion');
@@ -628,7 +633,7 @@
   // sin que nada la corte y el río tiene estaciones, dice cuál está sonando y cómo cambiarla con la
   // mano izquierda (clips estacion_inicio_<estación>).
   function presentarRio() {
-    if (!iniciado || !rioActual || !abierto) return;
+    if (!iniciado || !rioActual || !abierto || modoTutorial) return;
     const rio = rioActual;
     window.Locucion.reproducirPresentacionRio(rio, IDIOMA_LOCUCION, () => {
       const estacion = estacionDelRio();
@@ -722,11 +727,11 @@
     if (iniciado || !orquestaLista || !abierto) return;
     iniciado = true;
     portada.hidden = true;
-    dentroDelMapa = true;
+    dentroDelMapa = !modoTutorial;
     await window.Sonido.iniciar();
     indiceAnterior = -1;
     presentarRio();
-    anunciar('Move the mouse or the arrow keys over the map. Keys 1 to 4 turn instruments on and off, N switches the scale, M the music, R replays the intro, plus and minus zoom, Escape goes back to the rivers.', true);
+    if (!modoTutorial) anunciar('Move the mouse or the arrow keys over the map. Keys 1 to 4 turn instruments on and off, N switches the scale, M the music, R replays the intro, plus and minus zoom, Escape goes back to the rivers.', true);
   }
 
   lienzo.addEventListener('pointermove', (evento) => {
@@ -790,8 +795,11 @@
   });
 
   // 10. Abrir y cerrar el tablero
-  async function abrir(id) {
+  // opciones.tutorial: lo abre tutorial.js (ver modoTutorial). opciones.encuadre: nombres de
+  // ciudades que tienen que quedar a la vista, con zoom
+  async function abrir(id, opciones = {}) {
     abierto = true;
+    modoTutorial = Boolean(opciones.tutorial);
     // Si ya hubo un clic o una tecla en la página, el audio puede arrancar solo
     const conGesto = navigator.userActivation ? navigator.userActivation.hasBeenActive : false;
     mostrarPortada();
@@ -803,10 +811,14 @@
       anunciar(`Could not load the ${nombreDe(id)} river`, true);
       return;
     }
+    if (opciones.encuadre && window.Mapa.encuadrarCiudades(opciones.encuadre)) {
+      redibujarBase();
+      minimapaSucio = true;
+    }
     anunciar(`${nombreDe(id)} river`, true);
     pedirCuadro();
     if (iniciado) {
-      dentroDelMapa = true;
+      dentroDelMapa = !modoTutorial;
       presentarRio();
     } else if (conGesto) {
       await (orquestaListaPromesa || Promise.resolve());
@@ -816,6 +828,7 @@
 
   function cerrar() {
     abierto = false;
+    modoTutorial = false;
     dentroDelMapa = false;
     pedidoRio++;
     window.Locucion.detener();
@@ -828,6 +841,9 @@
     leerRios,
     abrir,
     cerrar,
+    redimensionar,
+    get abierto() { return abierto; },
+    get rio() { return rioActual; },
     cargarOrquesta() {
       if (!orquestaListaPromesa) orquestaListaPromesa = cargarOrquesta();
       return orquestaListaPromesa;

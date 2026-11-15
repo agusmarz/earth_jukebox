@@ -56,7 +56,9 @@
     { intencion: 'GO_HOME', alias: ['home', 'start screen', 'welcome', 'inicio', 'pantalla de inicio', 'bienvenida', 'principio'] },
     { intencion: 'LIST_RIVERS', alias: ['which rivers', 'list rivers', 'list of rivers', 'rivers', 'all rivers', 'que rios hay', 'rios', 'lista de rios', 'cuales rios'] },
     { intencion: 'REPEAT_INTRO', alias: ['repeat', 'replay', 'again', 'intro', 'introduction', 'repetir', 'repeti', 'repite', 'otra vez', 'presentacion', 'de nuevo'] },
-    { intencion: 'HELP', alias: ['help', 'commands', 'options', 'what can i say', 'tutorial', 'ayuda', 'comandos', 'opciones', 'que puedo decir', 'ayudame'] },
+    { intencion: 'HELP', alias: ['help', 'commands', 'options', 'what can i say', 'ayuda', 'comandos', 'opciones', 'que puedo decir', 'ayudame'] },
+    { intencion: 'TUTORIAL', alias: ['tutorial', 'open the tutorial', 'open tutorial', 'how does it work', 'teach me', 'abrir tutorial', 'abrir el tutorial', 'como funciona', 'ensename'] },
+    { intencion: 'SKIP', alias: ['skip', 'skip tutorial', 'skip the tutorial', 'saltar', 'saltar tutorial', 'saltear', 'saltear tutorial', 'omitir', 'omitir tutorial'] },
     { intencion: 'STATUS', alias: ['status', 'where am i', 'what is on', 'estado', 'donde estoy', 'como estoy', 'que suena'] },
     { intencion: 'STOP', alias: ['stop', 'stop talking', 'quiet', 'silence', 'shut up', 'basta', 'callate', 'silencio'] },
 

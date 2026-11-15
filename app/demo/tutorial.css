@@ -1,0 +1,534 @@
+/* Tutorial (tutorial.js). Sigue Tutorial.pdf: fondo blanco con la trama de puntos, barra de avance
+   arriba, logo gris, pastillas de cámara y micrófono, la mano o el gesto a la izquierda, el Paraná
+   esquemático a la derecha, la cámara abajo a la derecha y la barra con el texto y el NEXT abajo.
+   Las medidas son las del PDF (1333 x 746) llevadas a --u (diseño de 1160 x 645). */
+
+#vista-tutorial {
+  --tutorial-rojo: #ff7a5c;
+  --tutorial-menta: #5ee6bd;
+  --tutorial-amarillo: #f1e548;
+  --tutorial-verde: #0f9d6e;
+  --tutorial-gris-claro: #d4d4d4;
+  background: var(--blanco);
+}
+
+/* Arriba */
+.tutorial-progreso {
+  position: absolute;
+  top: calc(21 * var(--u));
+  left: 0;
+  right: 0;
+  height: max(8px, calc(12 * var(--u)));
+  background: #f0f0f0;
+}
+
+.tutorial-progreso-relleno {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #9a9a9a;
+  transition: width 420ms ease;
+}
+
+.tutorial-logo {
+  top: calc(62 * var(--u));
+  left: calc(52 * var(--u));
+  color: var(--tutorial-gris-claro);
+  text-align: left;
+}
+
+.tutorial-etiqueta {
+  position: absolute;
+  top: calc(70 * var(--u));
+  right: calc(83 * var(--u));
+  margin: 0;
+  font-weight: 800;
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--tutorial-gris-claro);
+}
+
+.tutorial-pastillas {
+  position: absolute;
+  top: calc(50 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: calc(16 * var(--u));
+  z-index: 2;
+}
+
+.tutorial-pastilla {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  height: max(34px, calc(43 * var(--u)));
+  padding: 0 calc(26 * var(--u));
+  border: 1px solid #ececec;
+  border-radius: calc(10 * var(--u));
+  background: var(--blanco);
+  font-weight: 800;
+  font-size: max(10px, calc(11.5 * var(--u)));
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gris-texto);
+}
+
+.tutorial-punto {
+  width: max(9px, calc(11 * var(--u)));
+  height: max(9px, calc(11 * var(--u)));
+  border-radius: 50%;
+  background: var(--gris-apagado);
+}
+
+.tutorial-pastilla.prendida {
+  color: var(--negro);
+}
+
+.tutorial-pastilla.prendida .tutorial-punto {
+  background: var(--tutorial-verde);
+}
+
+.tutorial-saltar {
+  position: absolute;
+  top: calc(96 * var(--u));
+  right: calc(83 * var(--u));
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font-weight: 500;
+  font-size: max(11px, calc(12 * var(--u)));
+  color: var(--gris-texto);
+  cursor: pointer;
+  z-index: 2;
+}
+
+.tutorial-saltar:hover {
+  color: var(--negro);
+}
+
+.tutorial-saltar:focus-visible,
+.tutorial-repetir:focus-visible,
+.tutorial-siguiente:focus-visible {
+  outline: 2px solid var(--negro);
+  outline-offset: 3px;
+}
+
+/* Escena: la parte que cambia en cada paso */
+.tutorial-escena {
+  position: absolute;
+  inset: calc(120 * var(--u)) 0 calc(96 * var(--u));
+}
+
+.tutorial-izquierda {
+  position: absolute;
+  top: calc(60 * var(--u));
+  left: calc(70 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(40 * var(--u));
+  height: calc(320 * var(--u));
+}
+
+.tutorial-izquierda-ancha {
+  left: calc(86 * var(--u));
+  width: calc(400 * var(--u));
+}
+
+.tutorial-ilustracion {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: calc(240 * var(--u));
+  height: calc(300 * var(--u));
+}
+
+.tutorial-bloque {
+  max-width: calc(330 * var(--u));
+}
+
+.tutorial-titulo {
+  margin: 0 0 calc(10 * var(--u));
+  font-weight: 800;
+  font-size: max(16px, calc(19.5 * var(--u)));
+  text-transform: uppercase;
+}
+
+.tutorial-subtitulo,
+.tutorial-dato,
+.tutorial-parrafo {
+  font-size: max(12px, calc(13 * var(--u)));
+  line-height: 1.4;
+}
+
+.tutorial-dedo {
+  margin-top: calc(14 * var(--u));
+  font-weight: 800;
+  font-size: max(12px, calc(13.5 * var(--u)));
+  text-transform: uppercase;
+}
+
+.tutorial-parrafo {
+  margin-top: calc(16 * var(--u));
+  color: #333;
+}
+
+.tutorial-lista {
+  display: grid;
+  gap: calc(8 * var(--u));
+  margin: calc(20 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: max(12px, calc(13 * var(--u)));
+}
+
+.tutorial-lista li {
+  display: grid;
+  grid-template-columns: calc(110 * var(--u)) 1fr;
+  gap: calc(10 * var(--u));
+  padding-top: calc(8 * var(--u));
+  border-top: 1px solid #ececec;
+}
+
+.tutorial-lista strong {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.92em;
+}
+
+.tutorial-estado {
+  max-width: calc(200 * var(--u));
+  white-space: pre-line;
+  line-height: 1.45;
+  margin-top: calc(18 * var(--u));
+  min-height: 1.4em;
+  font-size: max(11px, calc(12 * var(--u)));
+  color: var(--gris-texto);
+}
+
+.tutorial-estado::before {
+  content: '';
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  margin-right: 0.5em;
+  border-radius: 50%;
+  background: var(--gris-apagado);
+  vertical-align: 0.05em;
+}
+
+.tutorial-estado:empty::before {
+  display: none;
+}
+
+.tutorial-estado.listo {
+  color: var(--negro);
+  font-weight: 500;
+}
+
+.tutorial-estado.listo::before {
+  background: var(--tutorial-verde);
+}
+
+.tutorial-estado-centro {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(6 * var(--u));
+  text-align: center;
+}
+
+/* Manos */
+.mano {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Sin borde: la mano blanca se recorta por su halo, como en el PDF */
+.mano-relleno,
+.mano-resaltada {
+  fill: var(--blanco);
+  transition: fill 200ms;
+}
+
+.mano-linea {
+  fill: none;
+  stroke: var(--tutorial-menta);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 200ms;
+}
+
+/* Sin la mano: blanca con un halo rojo. Con la mano: negra con un halo verde agua, como en el PDF */
+[data-lado] .mano {
+  filter: drop-shadow(0 0 calc(18 * var(--u)) var(--tutorial-rojo));
+  transition: filter 250ms;
+}
+
+[data-lado].detectada .mano {
+  filter: drop-shadow(0 0 calc(18 * var(--u)) var(--tutorial-menta));
+}
+
+[data-lado].detectada .mano-relleno {
+  fill: var(--negro);
+}
+
+/* El dedo del filtro va amarillo, y con la mano a la vista y el dedo levantado brilla */
+.mano-resaltada {
+  fill: var(--tutorial-amarillo);
+}
+
+.tutorial-ilustracion.dedo-arriba .mano {
+  filter: drop-shadow(0 0 calc(22 * var(--u)) var(--tutorial-amarillo));
+}
+
+/* Paso 1: las dos manos */
+.tutorial-manos {
+  position: absolute;
+  top: calc(36 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: calc(120 * var(--u));
+}
+
+.tutorial-mano {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  width: calc(190 * var(--u));
+}
+
+.tutorial-mano figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  margin-top: calc(30 * var(--u));
+  text-align: center;
+  font-size: max(12px, calc(13 * var(--u)));
+  line-height: 1.45;
+  color: #444;
+}
+
+.tutorial-mano figcaption strong {
+  font-weight: 800;
+  font-size: max(20px, calc(29 * var(--u)));
+  text-transform: uppercase;
+  color: var(--negro);
+}
+
+.tutorial-manos.sacudir {
+  animation: tutorial-sacudir 420ms ease;
+}
+
+@keyframes tutorial-sacudir {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 10px)); }
+  50% { transform: translateX(calc(-50% + 10px)); }
+  75% { transform: translateX(calc(-50% - 5px)); }
+}
+
+/* Paso 2: el puño con la flecha que gira alrededor */
+.tutorial-giro {
+  width: calc(270 * var(--u));
+  height: calc(270 * var(--u));
+}
+
+.tutorial-giro .mano {
+  width: 52%;
+}
+
+.tutorial-giro-flecha {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--negro);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-origin: 50% 50%;
+}
+
+.tutorial-giro .mano-linea {
+  opacity: 0;
+}
+
+.tutorial-giro.detectada.puno .mano-linea {
+  opacity: 1;
+}
+
+/* Paso 3: la mano con las cuatro flechas */
+.tutorial-cruz {
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+}
+
+.tutorial-cruz .mano {
+  grid-area: 2 / 2;
+  width: calc(150 * var(--u));
+}
+
+.tutorial-flecha {
+  font-size: max(20px, calc(28 * var(--u)));
+  line-height: 1;
+}
+
+.tutorial-flecha-arriba { grid-area: 1 / 2; }
+.tutorial-flecha-abajo { grid-area: 3 / 2; }
+.tutorial-flecha-izquierda { grid-area: 2 / 1; }
+.tutorial-flecha-derecha { grid-area: 2 / 3; }
+
+/* Pasos de filtros: la mano cerrada con un dedo afuera */
+.tutorial-ilustracion[data-lado] > .mano {
+  width: calc(190 * var(--u));
+}
+
+/* El Paraná: el mapa del tablero mudado a esta pantalla (ver tutorial.js). Ocupa la derecha,
+   entre la barra de arriba y la de abajo, sin pisar la cámara */
+.tutorial-mapa {
+  position: absolute;
+  top: calc(118 * var(--u));
+  bottom: calc(96 * var(--u));
+  left: calc(570 * var(--u));
+  right: calc(265 * var(--u));
+  z-index: 1;
+}
+
+.tutorial-mapa[hidden] {
+  display: none;
+}
+
+/* La portada del tablero ("Click to listen to the river") cubre solo el mapa */
+.tutorial-mapa .portada {
+  right: 0;
+}
+
+.tutorial-mapa .portada-titulo {
+  font-size: max(16px, calc(20 * var(--u)));
+}
+
+/* Cámara abajo a la derecha */
+.tutorial-camara {
+  position: absolute;
+  right: calc(79 * var(--u));
+  bottom: calc(101 * var(--u));
+  display: grid;
+  place-items: center;
+  width: calc(165 * var(--u));
+  min-width: 140px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: calc(10 * var(--u));
+  background: #1a1a1a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  z-index: 2;
+}
+
+.tutorial-camara-lienzo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tutorial-camara-lienzo[hidden],
+.tutorial-camara-aviso[hidden] {
+  display: none;
+}
+
+.tutorial-camara-aviso {
+  text-align: center;
+  font-size: max(11px, calc(12 * var(--u)));
+  line-height: 1.4;
+  color: #bdbdbd;
+}
+
+.tutorial-camara-aviso strong {
+  color: var(--blanco);
+  font-weight: 800;
+}
+
+/* Barra de abajo */
+.tutorial-barra {
+  position: absolute;
+  left: calc(86 * var(--u));
+  right: calc(77 * var(--u));
+  bottom: calc(30 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  min-height: max(48px, calc(52 * var(--u)));
+  padding: 6px calc(8 * var(--u)) 6px calc(30 * var(--u));
+  border: 1px solid #dedede;
+  border-radius: calc(8 * var(--u));
+  background: var(--blanco);
+  z-index: 3;
+}
+
+.tutorial-repetir {
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.tutorial-texto {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: max(13px, calc(17.5 * var(--u)));
+}
+
+.tutorial-siguiente {
+  flex: none;
+  min-width: calc(97 * var(--u));
+  height: max(34px, calc(36 * var(--u)));
+  padding: 0 calc(18 * var(--u));
+  border: 0;
+  border-radius: calc(4 * var(--u));
+  background: var(--negro);
+  color: var(--blanco);
+  font-weight: 800;
+  font-size: max(11px, calc(12 * var(--u)));
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 160ms, color 160ms;
+}
+
+/* En el paso 1, hasta que se ven las dos manos */
+.tutorial-siguiente.bloqueado {
+  background: var(--gris-pista);
+  color: var(--gris-texto);
+}
+
+/* Un destello suave cuando se reconoce el gesto */
+#vista-tutorial.destello .tutorial-escena {
+  animation: tutorial-destello 520ms ease-out;
+}
+
+@keyframes tutorial-destello {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.12); }
+  100% { filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-progreso-relleno { transition: none; }
+  .tutorial-manos.sacudir,
+  #vista-tutorial.destello .tutorial-escena { animation: none; }
+}
+

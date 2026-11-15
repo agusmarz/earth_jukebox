@@ -4,7 +4,8 @@
 //
 // Al abrir la página en la bienvenida pide apretar la C para prender la cámara (clip "inicio") y
 // pide el permiso del micrófono (sección 7). Recién con la cámara prendida dice que hay que decir
-// "next" (clip "camara_activada"): de la bienvenida no se sale sin la cámara (app.js).
+// "next" (clip "camara_activada"): de la bienvenida no se sale sin la cámara (app.js). El "next" de la
+// bienvenida lleva al tutorial (tutorial.js), que habla solo; ahí next, back, repeat y skip lo manejan.
 //
 // Cómo se activa:
 //   - Barra espaciadora apretada: escucha mientras está apretada y actúa al soltarla. Un toque
@@ -25,7 +26,7 @@
   const ATENUACION_ESCUCHA = 0.03;
   const PAUSA_MANOS_LIBRES_MS = 400;
   const VIGENCIA_PREGUNTA_MS = 20000;
-  const VISTAS_MANOS_LIBRES = ['bienvenida', 'rios'];
+  const VISTAS_MANOS_LIBRES = ['bienvenida', 'tutorial', 'rios'];
 
   const botonMicrofono = document.querySelector('.boton-microfono');
   const textoMicrofono = botonMicrofono ? botonMicrofono.querySelector('.texto-microfono') : null;
@@ -110,7 +111,15 @@
     };
     rec.onerror = (evento) => { s.error = evento.error; };
     rec.onend = () => {
+      if (s.alCerrar) s.alCerrar();
       if (sesion === s) sesion = null;
+      // Una sesión con la tecla que Chrome cortó al arrancar ("aborted" sin que la app la cortara)
+      // se vuelve a abrir si la tecla sigue apretada
+      if (!s.abortada && s.error === 'aborted' && s.modo === 'tecla' && teclaApretada && !s.reintentada) {
+        escuchar('tecla');
+        if (sesion) sesion.reintentada = true;
+        return;
+      }
       terminar(s);
     };
 
@@ -121,22 +130,55 @@
       mostrarIndicador('Listening…', 'escuchando');
     }
     sesion = s;
-    try {
-      rec.start();
-    } catch (error) {
-      sesion = null;
-      atenuarParaEscuchar(false);
-      mostrarIndicador('');
-    }
+    // Chrome admite una sola sesión de reconocimiento por página: si la anterior (por ejemplo la de
+    // manos libres que se acaba de cortar) todavía no terminó, la nueva no arranca o termina enseguida
+    // con "aborted". Se espera a que la anterior cierre, con un tope, y si el arranque falla se
+    // reintenta una vez.
+    const arrancar = (intento) => {
+      if (sesion !== s || s.abortada) return;
+      try {
+        rec.start();
+        s.arranco = true;
+        if (s.pararAlArrancar) setTimeout(() => { try { rec.stop(); } catch (error) { /* ya terminó */ } }, COLA_MS);
+      } catch (error) {
+        if (intento === 0) {
+          setTimeout(() => arrancar(1), 250);
+          return;
+        }
+        console.warn('Comandos de voz: no arrancó el reconocimiento', error);
+        sesion = null;
+        atenuarParaEscuchar(false);
+        mostrarError('could not start listening, try again');
+      }
+    };
+    const anterior = cierrePendiente;
+    if (!anterior) arrancar(0);
+    else Promise.race([anterior, new Promise((r) => setTimeout(r, 400))]).then(() => arrancar(0));
   }
+
+  // Se resuelve cuando la última sesión cortada termina de verdad (su onend)
+  let cierrePendiente = null;
 
   function cancelarSesion() {
     if (!sesion) return;
     const s = sesion;
     sesion = null;
     s.abortada = true;
-    try { s.rec.abort(); } catch (error) { /* ya terminó */ }
+    if (s.arranco) {
+      const cierre = new Promise((resolver) => { s.alCerrar = resolver; });
+      cierrePendiente = cierre;
+      cierre.then(() => { if (cierrePendiente === cierre) cierrePendiente = null; });
+      try { s.rec.abort(); } catch (error) { if (s.alCerrar) s.alCerrar(); }
+    }
     atenuarParaEscuchar(false);
+  }
+
+  // El error queda escrito unos segundos en el indicador, además de la respuesta hablada
+  function mostrarError(texto) {
+    mostrarIndicador(`Voice: ${texto}`, 'error');
+    setTimeout(() => {
+      if (!sesion && indicador && indicador.dataset.estado === 'error') mostrarIndicador('');
+    }, 5000);
   }
 
   // Las alternativas del reconocedor, de la más probable a la menos
@@ -186,6 +228,14 @@
       'language-not-supported': 'error_sin_reconocimiento',
     }[error];
     console.warn(`Comandos de voz: ${error}`);
+    const motivos = {
+      'not-allowed': 'the microphone is blocked, allow it in the browser',
+      'service-not-allowed': 'the browser does not allow speech recognition here',
+      'audio-capture': 'no microphone found',
+      network: 'the speech service did not answer, check your internet connection',
+      'language-not-supported': 'this browser cannot recognize English',
+    };
+    mostrarError(motivos[error] || error);
     // Sin manos libres si el error se repetiría en cada intento
     if (manosLibres) desactivarManosLibres();
     if (verboso || clip) {
@@ -260,6 +310,23 @@
     const app = window.App;
     const vista = app.vista;
     const acciones = window.Tablero.acciones;
+    const tutorial = window.Tutorial;
+
+    if (vista === 'tutorial' && tutorial) {
+      switch (intencion) {
+        case 'NEXT': tutorial.siguiente(true); return;
+        case 'BACK': tutorial.anterior(); return;
+        case 'REPEAT_INTRO':
+        case 'HELP': tutorial.repetir(); return;
+        case 'SKIP': tutorial.saltar(true); return;
+        case 'TUTORIAL': tutorial.abrir(); return;
+        default: break; // el resto (ríos, inicio, stop) como en las demás vistas
+      }
+    }
+    if (intencion === 'TUTORIAL') {
+      app.ir('tutorial'); // desde la bienvenida sin cámara no pasa: pide la cámara
+      return;
+    }
 
     if (ACCIONES_TABLERO.includes(intencion) && !acciones.iniciado) {
       // Si la orquesta arranca ahora suena la presentación del río; la confirmación la cortaría
@@ -269,7 +336,7 @@
     switch (intencion) {
       case 'NEXT':
         if (vista === 'bienvenida') {
-          if (app.ir('rios')) decir('vista_menu');
+          app.ir('tutorial'); // el tutorial dice su primera nota de voz
         } else if (vista === 'rio' && !acciones.iniciado) {
           await asegurarInicio();
         } else {
@@ -439,7 +506,9 @@
     }
     earcon('fin');
     setTimeout(() => {
-      try { s.rec.stop(); } catch (error) { /* ya terminó */ }
+      // Si todavía espera a que cierre la sesión anterior, se detiene apenas arranque
+      if (!s.arranco) s.pararAlArrancar = true;
+      else try { s.rec.stop(); } catch (error) { /* ya terminó */ }
     }, COLA_MS);
   }
 

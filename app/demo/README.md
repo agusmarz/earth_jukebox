@@ -34,7 +34,7 @@ La dirección acepta estos parámetros, y se pueden combinar.
 | --- | --- |
 | `#rio/<id>` | Ya no abre directo el tablero: sin la cámara prendida la página arranca en la bienvenida |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
-| `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
+| `?musica=original` o `?musica=dos_octavas` | Arranca con esa lógica musical. Sin el parámetro arranca con relieve, la misma que enseña el tutorial |
 | `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca en verano |
 | `?carpeta=pruebas` | Lee los datos de `pruebas/` en lugar de `datos/` |
 

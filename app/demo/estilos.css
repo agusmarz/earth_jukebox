@@ -328,8 +328,19 @@ button {
   font-weight: 800;
   font-size: max(10px, calc(11 * var(--u)));
   text-transform: uppercase;
-  cursor: default;
+  text-decoration: none;
+  color: var(--negro);
+  cursor: pointer;
   z-index: 3;
+}
+
+.boton-tutorial:hover {
+  background: #ececec;
+}
+
+.boton-tutorial:focus-visible {
+  outline: 2px solid var(--blanco);
+  outline-offset: 3px;
 }
 
 .icono-tutorial {

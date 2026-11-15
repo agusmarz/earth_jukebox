@@ -303,9 +303,9 @@
   window.addEventListener('keydown', (evento) => {
     if (evento.key.toLowerCase() !== TECLA_CAMARA || evento.ctrlKey || evento.metaKey || evento.altKey) return;
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(evento.target.tagName)) return;
-    // En la bienvenida (para arrancar) y en el tablero del río. En el menú de ríos no hace nada
+    // En la bienvenida (para arrancar), en el tutorial y en el tablero del río. En el menú no hace nada
     const vistaApp = window.App && window.App.vista;
-    if (vistaApp !== 'bienvenida' && !mapaVisible()) return;
+    if (vistaApp !== 'bienvenida' && vistaApp !== 'tutorial' && !mapaVisible()) return;
     if (encendida) apagar();
     else encender();
   });
