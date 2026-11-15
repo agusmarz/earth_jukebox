@@ -266,6 +266,36 @@ button {
   outline-offset: -6px;
 }
 
+/* Sin cámara la pestaña pide la C; es más larga que el "next" */
+.pestana-continuar[data-camara="apagada"],
+.pestana-continuar[data-camara="prendiendo"] {
+  width: auto;
+  padding: 0 calc(28 * var(--u));
+  max-width: calc(100vw - 32px);
+  white-space: nowrap;
+}
+
+.pestana-continuar[data-camara="prendiendo"] {
+  cursor: progress;
+}
+
+/* Intento de avanzar sin la cámara */
+.pestana-continuar.resaltada {
+  animation: pestana-sacudir 420ms ease-in-out;
+}
+
+@keyframes pestana-sacudir {
+  0%, 100% { transform: translateX(-50%); }
+  20% { transform: translateX(calc(-50% - 8px)); }
+  40% { transform: translateX(calc(-50% + 8px)); }
+  60% { transform: translateX(calc(-50% - 5px)); }
+  80% { transform: translateX(calc(-50% + 5px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pestana-continuar.resaltada { animation: none; background: #1d1d1d; }
+}
+
 /* ---------- 2. Menú de ríos ---------- */
 
 #vista-rios {

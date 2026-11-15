@@ -2,7 +2,9 @@
 // lo procesa Google, en Edge Microsoft), entiende la frase con voz_intenciones.js y llama a las
 // mismas funciones que las teclas (App.ir de app.js y Tablero.acciones de demo.js).
 //
-// Al abrir la página en la bienvenida dice cómo hablar y pide el permiso del micrófono (sección 7).
+// Al abrir la página en la bienvenida pide apretar la C para prender la cámara (clip "inicio") y
+// pide el permiso del micrófono (sección 7). Recién con la cámara prendida dice que hay que decir
+// "next" (clip "camara_activada"): de la bienvenida no se sale sin la cámara (app.js).
 //
 // Cómo se activa:
 //   - Barra espaciadora apretada: escucha mientras está apretada y actúa al soltarla. Un toque
@@ -267,8 +269,7 @@
     switch (intencion) {
       case 'NEXT':
         if (vista === 'bienvenida') {
-          app.ir('rios');
-          decir('vista_menu');
+          if (app.ir('rios')) decir('vista_menu');
         } else if (vista === 'rio' && !acciones.iniciado) {
           await asegurarInicio();
         } else {
@@ -289,16 +290,24 @@
         decir('volver_inicio');
         return;
       case 'LIST_RIVERS':
-        if (vista !== 'rios') app.ir('rios');
+        if (vista !== 'rios' && !app.ir('rios')) return;
         decir('vista_menu');
         return;
       case 'OPEN_RIVER': {
         const actual = vista === 'rio' && location.hash === `#rio/${parametros.id}`;
+        if (vista === 'bienvenida' && !app.camaraLista) {
+          app.ir('rios'); // no pasa: pide la cámara
+          return;
+        }
         if (actual) acciones.repetirPresentacion();
         else app.ir(`rio/${parametros.id}`, vista === 'rio');
         return;
       }
       case 'HELP':
+        if (vista === 'bienvenida') {
+          decir(['vista_bienvenida', app.camaraLista ? 'decir_next' : 'camara_pedir']);
+          return;
+        }
         decir(CLIP_AYUDA[vista] || (acciones.iniciado ? 'vista_tablero_comandos' : 'vista_tablero_portada'));
         return;
       case 'STOP':
@@ -462,7 +471,8 @@
   const enBienvenida = () => (window.App.vista ? window.App.vista === 'bienvenida' : !location.hash.replace(/^#/, ''));
 
   async function decirInicio() {
-    if (!enBienvenida() || sesion || teclaApretada) return true;
+    // Si ya apretó la C, lo que suena es la respuesta de la cámara (sección 8)
+    if (!enBienvenida() || sesion || teclaApretada || (window.Manos && window.Manos.encendida)) return true;
     return (await decir('inicio')) !== false;
   }
 
@@ -512,6 +522,18 @@
     // Aceptar el permiso a veces alcanza para que Chrome deje sonar
     if (introPendiente && !sesion && !window.Locucion.hablando && (await decirInicio())) introPendiente = false;
   }
+
+  // 8. La cámara (manos.js). En la bienvenida, al prenderse pide el "next", y si falla dice por qué
+  window.addEventListener('camara', (evento) => {
+    const { estado, error } = evento.detail;
+    if (window.App.vista !== 'bienvenida') return;
+    if (estado === 'prendida') {
+      introPendiente = false;
+      decir('camara_activada');
+    } else if (estado === 'error') {
+      decir(error === 'permiso' ? 'camara_error_permiso' : error === 'sin_camara' ? 'camara_error_sin_camara' : 'camara_error');
+    }
+  });
 
   window.addEventListener('locucion', sincronizarManosLibres);
   window.addEventListener('hashchange', sincronizarManosLibres);

@@ -8,9 +8,11 @@ La interfaz está en inglés y copia los diseños de `earth_jukebox_design` (`we
 
 | Vista | Dirección | Cómo se sale |
 | --- | --- | --- |
-| Bienvenida, "The Melody of Water" | `index.html` | Clic en la pestaña de abajo, Enter, flecha derecha o N, o decir "next" con el Espacio apretado |
+| Bienvenida, "The Melody of Water" | `index.html` | Primero hay que prender la cámara (tecla C o clic en la pestaña de abajo). Después, clic en la pestaña, Enter, flecha derecha o N, o decir "next" con el Espacio apretado |
 | Menú de ríos sobre el planisferio | `#rios` | Clic en la etiqueta de un río, o las teclas 1 a 9 y 0 para el décimo. Escape vuelve a la bienvenida |
 | Tablero del río | `#rio/<id>` | Clic en el logo de arriba a la izquierda, o Escape |
+
+**Sin la cámara prendida no se sale de la bienvenida.** Al abrir la página, la voz pide apretar la C (clip `inicio`), y la pestaña de abajo dice "Press C to turn on the camera". Si se intenta avanzar antes (Enter, N, "next", un río por voz o el botón atrás del navegador), la pestaña se sacude y la voz repite el pedido (`camara_pedir`). Recién cuando la cámara manda cuadros, la voz pide decir "next" (`camara_activada`) y la pestaña cambia a "Say NEXT to continue". Si el navegador bloquea la cámara o no hay ninguna, lo dice (`camara_error_*`) y se puede volver a apretar la C. La cámara queda prendida al pasar al menú y al tablero. Por lo mismo, una dirección directa a `#rios` o `#rio/<id>` arranca en la bienvenida.
 
 Los ríos del menú van numerados de mayor a menor caudal, con su nombre en inglés, según `rios.js`. Un río de `datos/indice.json` que no esté en `rios.js` aparece al final con el nombre de sus datos. Las etiquetas van sobre el punto medio del cauce, y si dos se pisan se separan y una línea las une con su río.
 
@@ -30,7 +32,7 @@ La dirección acepta estos parámetros, y se pueden combinar.
 
 | Parámetro | Qué hace |
 | --- | --- |
-| `#rio/<id>` | Abre directo el tablero de ese río. La dirección vieja `?rio=<id>` también funciona |
+| `#rio/<id>` | Ya no abre directo el tablero: sin la cámara prendida la página arranca en la bienvenida |
 | `?normalizacion=global` | Arranca con la normalización global. Sin el parámetro arranca con la propia |
 | `?musica=dos_octavas` o `?musica=relieve` | Arranca con esa lógica musical. Sin el parámetro arranca con la original |
 | `?estacion=invierno` | Arranca con esa estación (`verano`, `otono`, `invierno` o `primavera`) si el río tiene estaciones. Sin el parámetro arranca en verano |
@@ -67,7 +69,7 @@ El botón Replay del panel (o la tecla R) repite la presentación. `locucion.js`
 
 ## Comandos de voz
 
-Al abrir la página en la bienvenida, una voz explica que se habla con la barra espaciadora apretada, y a la vez el navegador pide permiso para usar el micrófono. Chrome no deja sonar nada hasta el primer clic o tecla en un sitio que no se visitó seguido: en ese caso la ventana del permiso aparece igual, y el mensaje suena con el primer clic o tecla (si es el Espacio, directamente escucha). Con la barra espaciadora apretada se habla, y al soltarla la app hace lo pedido y lo confirma en voz alta. Por ejemplo "next", "go to the Paraná river", "quiero ir al paraná", "el siete", "width off", "winter", "global scale", "two octaves", "zoom in", "whole river", "repeat", "status", "help" o "menu". Un toque corto del Espacio no hace nada. Mientras escucha, la orquesta casi se apaga. La pestaña del micrófono del menú escucha una frase con un clic, y el botón "Activate your microphone" de la bienvenida, además, escucha sin tecla en la bienvenida y en el menú, salvo mientras habla una locución.
+Al abrir la página en la bienvenida, una voz pide apretar la C para prender la cámara, y cuando la cámara está prendida explica que se habla con la barra espaciadora apretada y que hay que decir "next", y a la vez el navegador pide permiso para usar el micrófono. Chrome no deja sonar nada hasta el primer clic o tecla en un sitio que no se visitó seguido: en ese caso la ventana del permiso aparece igual, y el mensaje suena con el primer clic o tecla (si es el Espacio, directamente escucha). Con la barra espaciadora apretada se habla, y al soltarla la app hace lo pedido y lo confirma en voz alta. Por ejemplo "next", "go to the Paraná river", "quiero ir al paraná", "el siete", "width off", "winter", "global scale", "two octaves", "zoom in", "whole river", "repeat", "status", "help" o "menu". Un toque corto del Espacio no hace nada. Mientras escucha, la orquesta casi se apaga. La pestaña del micrófono del menú escucha una frase con un clic, y el botón "Activate your microphone" de la bienvenida, además, escucha sin tecla en la bienvenida y en el menú, salvo mientras habla una locución.
 
 - `voz.js` escucha con la Web Speech API del navegador, en inglés (`en-US`). Anda en Chrome y Edge, con internet: en Chrome el audio lo procesa Google y en Edge Microsoft. Firefox no la tiene, y avisa que use el teclado.
 - `voz_intenciones.js` convierte la frase en una acción. Compara cada parte de la frase con los alias de `voz_alias.js`, exactos o parecidos (distancia de edición sobre el texto y sobre una clave fonética), en inglés y castellano. Un número suelto elige un río en el menú y una capa en el tablero ("river seven" es un río también en el tablero). Un río parecido pero no seguro se confirma ("Did you mean the Ganges? Say yes or no"), y lo que no se entiende responde "Sorry, I didn't catch that". Las pruebas están en `pruebas/intenciones.test.mjs` (`node --test pruebas/`).

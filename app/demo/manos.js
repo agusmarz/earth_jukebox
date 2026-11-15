@@ -140,7 +140,8 @@
   let poseLandmarker = null; // cuerpo, null si no cargó (entonces se usa solo la continuidad)
   let cargaModelos = null;
   let flujo = null;
-  let encendida = false;
+  let encendida = false; // pedida: desde que se aprieta C hasta que se apaga o falla
+  let activa = false; // la cámara ya manda cuadros (con el modelo cargado)
   let ultimoTiempoVideo = -1;
   let ultimaMarca = -1;
   let cuadro = 0;
@@ -218,11 +219,19 @@
   }
   precargar();
 
-  // 4. Encender y apagar la cámara
+  // 4. Encender y apagar la cámara. Se puede prender desde la bienvenida (app.js no deja pasar de
+  // ahí sin la cámara) y queda prendida al cambiar de vista. Cada cambio se avisa con el evento
+  // "camara" de window, detail.estado: 'prendiendo', 'prendida', 'apagada' o 'error' (con detail.error:
+  // 'permiso', 'sin_camara' u 'otro').
+  function avisarEstado(estadoCamara, error) {
+    window.dispatchEvent(new CustomEvent('camara', { detail: { estado: estadoCamara, error: error || null } }));
+  }
+
   async function encender() {
     if (encendida) return;
     encendida = true;
     actualizarBoton();
+    avisarEstado('prendiendo');
     if (!landmarker) mostrarAviso('Loading the hand model…');
     try {
       const [, medio] = await Promise.all([
@@ -236,20 +245,37 @@
       flujo = medio;
       video.srcObject = flujo;
       await video.play();
+      if (!encendida) return; // se apagó mientras arrancaba el video
       mostrarAviso('');
       vista.hidden = false;
       ultimoTiempoVideo = -1;
+      activa = true;
+      ultimoError = null;
       requestAnimationFrame(procesar);
+      avisarEstado('prendida');
     } catch (error) {
-      if (error && error.name === 'NotAllowedError') mostrarAviso('The browser blocked the camera');
-      else if (error && error.name === 'NotFoundError') mostrarAviso('No camera found');
-      else mostrarAviso(`Hand control is unavailable. ${error && error.message ? error.message : ''}`);
+      let tipo = 'otro';
+      if (error && (error.name === 'NotAllowedError' || error.name === 'SecurityError')) {
+        tipo = 'permiso';
+        mostrarAviso('The browser blocked the camera');
+      } else if (error && (error.name === 'NotFoundError' || error.name === 'OverconstrainedError')) {
+        tipo = 'sin_camara';
+        mostrarAviso('No camera found');
+      } else {
+        mostrarAviso(`Hand control is unavailable. ${error && error.message ? error.message : ''}`);
+      }
+      ultimoError = tipo;
       apagar(true);
+      avisarEstado('error', tipo);
     }
   }
 
+  let ultimoError = null;
+
   function apagar(conservarAviso) {
+    const estaba = encendida;
     encendida = false;
+    activa = false;
     if (flujo) for (const pista of flujo.getTracks()) pista.stop();
     flujo = null;
     video.srcObject = null;
@@ -260,6 +286,10 @@
     estado.manoIzquierdaActiva = false;
     resetearTrackingIzquierdo();
     actualizarBoton();
+    if (estaba && !conservarAviso) {
+      ultimoError = null;
+      avisarEstado('apagada');
+    }
   }
 
   function actualizarBoton() {
@@ -273,7 +303,9 @@
   window.addEventListener('keydown', (evento) => {
     if (evento.key.toLowerCase() !== TECLA_CAMARA || evento.ctrlKey || evento.metaKey || evento.altKey) return;
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(evento.target.tagName)) return;
-    if (!mapaVisible()) return;
+    // En la bienvenida (para arrancar) y en el tablero del río. En el menú de ríos no hace nada
+    const vistaApp = window.App && window.App.vista;
+    if (vistaApp !== 'bienvenida' && !mapaVisible()) return;
     if (encendida) apagar();
     else encender();
   });
@@ -806,6 +838,10 @@
   window.Manos = {
     encender,
     apagar,
+    // Pedida (está arrancando o ya anda) y ya mandando cuadros
+    get encendida() { return encendida; },
+    get activa() { return activa; },
+    get ultimoError() { return ultimoError; },
     get estado() { return { ...estado, dedosLevantados: [...estado.dedosLevantados] }; },
     // Qué modelos ya están listos, se cargan solos al abrir la app
     get modelos() { return { manos: landmarker !== null, pose: poseLandmarker !== null }; },

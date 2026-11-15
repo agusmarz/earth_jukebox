@@ -4,6 +4,8 @@
 //   #rio/<id>    tablero del río (demo.js)
 // La dirección vieja ?rio=<id> abre directo el tablero de ese río.
 // Se maneja con mouse, teclado y comandos de voz (voz.js, con la barra espaciadora apretada).
+// De la bienvenida no se pasa sin prender la cámara del control con las manos (manos.js, tecla C
+// o clic en la pestaña de abajo). Una dirección directa a otra vista también arranca en la bienvenida.
 // El botón Tutorial todavía no hace nada.
 
 (function () {
@@ -119,8 +121,16 @@
     return { vista: 'bienvenida' };
   }
 
+  // La cámara (manos.js) tiene que estar mandando cuadros para salir de la bienvenida
+  const camaraLista = () => !window.Manos || window.Manos.activa;
+
   function mostrar() {
     let { vista, id } = ruta();
+    if (vista !== 'bienvenida' && (vistaActual === null || vistaActual === 'bienvenida') && !camaraLista()) {
+      bloqueado();
+      ir('bienvenida', true);
+      return;
+    }
     if (vista === 'rio' && rios.length > 0 && !rios.some((rio) => rio.id === id)) {
       ir('rios', true);
       return;
@@ -141,26 +151,79 @@
     }
   }
 
+  // Intento de salir de la bienvenida sin la cámara: se pide la C, en voz alta y en pantalla
+  function bloqueado() {
+    if (vistaActual !== 'bienvenida') return;
+    anuncios.textContent = 'Turn on the camera first. Press C.';
+    actualizarPestana(true);
+    if (window.Locucion && !(window.Manos && window.Manos.encendida)) window.Locucion.decir('camara_pedir');
+  }
+
+  // Devuelve false si no pudo salir de la bienvenida porque la cámara está apagada
   function ir(destino, reemplazar) {
+    if (destino !== 'bienvenida' && vistaActual === 'bienvenida' && !camaraLista()) {
+      bloqueado();
+      return false;
+    }
     const hash = destino === 'bienvenida' ? '' : `#${destino}`;
     const direccion = `${location.pathname}${location.search}${hash}`;
     if (reemplazar) history.replaceState(null, '', direccion);
     else history.pushState(null, '', direccion);
     mostrar();
+    return true;
   }
 
   // Para los comandos de voz (voz.js)
   window.App = {
     ir,
     get vista() { return vistaActual; },
+    get camaraLista() { return camaraLista(); },
     get rios() { return rios; },
   };
 
   window.addEventListener('popstate', mostrar);
   window.addEventListener('hashchange', mostrar);
 
-  // 4. Entrada con mouse y teclado
-  document.getElementById('boton-continuar').addEventListener('click', () => ir('rios'));
+  // 4. Pestaña de la bienvenida: primero pide la cámara y, con la cámara prendida, el "next"
+  const pestana = document.getElementById('boton-continuar');
+  let esperaResaltado = null;
+  function actualizarPestana(resaltar) {
+    const manos = window.Manos;
+    const estado = !manos ? 'prendida' : manos.activa ? 'prendida' : manos.encendida ? 'prendiendo' : 'apagada';
+    pestana.dataset.camara = estado;
+    if (estado === 'prendida') {
+      pestana.innerHTML = 'Say <strong>“NEXT”</strong> to continue';
+      pestana.setAttribute('aria-label', 'Camera on. Continue to the rivers');
+    } else if (estado === 'prendiendo') {
+      pestana.innerHTML = 'Turning on the <strong>camera</strong>…';
+      pestana.setAttribute('aria-label', 'Turning on the camera');
+    } else {
+      const error = manos.ultimoError;
+      const motivo = error === 'permiso' ? 'Camera blocked. ' : error === 'sin_camara' ? 'No camera found. ' : '';
+      pestana.innerHTML = `${motivo}Press <strong>“C”</strong> to turn on the camera`;
+      pestana.setAttribute('aria-label', `${motivo}Turn on the camera to start. Key C`);
+    }
+    if (resaltar) {
+      pestana.classList.remove('resaltada');
+      void pestana.offsetWidth; // reinicia la animación
+      pestana.classList.add('resaltada');
+      clearTimeout(esperaResaltado);
+      esperaResaltado = setTimeout(() => pestana.classList.remove('resaltada'), 900);
+    }
+  }
+  window.addEventListener('camara', (evento) => {
+    actualizarPestana();
+    const { estado } = evento.detail;
+    if (vistaActual !== 'bienvenida') return;
+    if (estado === 'prendida') anuncios.textContent = 'Camera on. Say next, or press Enter, to continue.';
+    else if (estado === 'error') anuncios.textContent = pestana.getAttribute('aria-label');
+  });
+
+  // 5. Entrada con mouse y teclado
+  pestana.addEventListener('click', () => {
+    if (camaraLista()) ir('rios');
+    else if (window.Manos && !window.Manos.encendida) window.Manos.encender();
+  });
   contenedorEtiquetas.addEventListener('click', (evento) => {
     const enlace = evento.target.closest('.etiqueta-rio');
     if (!enlace) return;
@@ -191,7 +254,7 @@
     }
   });
 
-  // 5. Arranque. La orquesta empieza a cargar enseguida, así cuando se elige un río ya está.
+  // 6. Arranque. La orquesta empieza a cargar enseguida, así cuando se elige un río ya está.
   const viejo = new URLSearchParams(location.search).get('rio');
   if (viejo && !location.hash) {
     const parametros = new URLSearchParams(location.search);
@@ -199,6 +262,13 @@
     const consulta = parametros.toString();
     history.replaceState(null, '', `${location.pathname}${consulta ? `?${consulta}` : ''}#rio/${viejo}`);
   }
+  // Sin cámara no se sale de la bienvenida, y al abrir la página la cámara siempre está apagada. Se
+  // corrige la dirección antes de que voz.js decida si dice la bienvenida
+  if (location.hash.replace(/^#/, '')) {
+    history.replaceState(null, '', `${location.pathname}${location.search}`);
+  }
+  // manos.js se carga después de este archivo
+  document.addEventListener('DOMContentLoaded', () => actualizarPestana());
 
   window.Tablero.cargarOrquesta();
   window.Tablero.leerRios().then((lista) => {

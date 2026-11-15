@@ -108,17 +108,27 @@ NUMEROS_ES = ["Uno", "Dos", "Tres", "Cuatro", "Cinco", "Seis", "Siete", "Ocho", 
 
 NAVEGACION = {
     "en": {
-        # Suena apenas se abre la página, mientras el navegador pide el permiso del micrófono
+        # Suena apenas se abre la página, mientras el navegador pide el permiso del micrófono. De la
+        # bienvenida no se pasa sin la cámara: el "next" recién se pide en camara_activada
         "inicio": (
-            "Welcome to The Melody of Water. To use your voice, press and hold the space bar while you speak, "
-            "and release it when you finish. If your browser asks for the microphone, allow it. "
-            "Say next to continue."
+            "Welcome to The Melody of Water. You will play the rivers with your hands, so first, "
+            "press the C key to turn on the camera. If your browser asks for the camera or the microphone, allow it."
         ),
+        # Ayuda de la bienvenida; voz.js le agrega camara_pedir o decir_next según la cámara
         "vista_bienvenida": (
             "Welcome to The Melody of Water, where satellite data from the great rivers of the world "
-            "becomes orchestral music. Hold the space bar while you speak. Say next to continue, "
-            "or help at any time."
+            "becomes orchestral music. Hold the space bar while you speak, or say help at any time."
         ),
+        "camara_pedir": "First, press the C key to turn on the camera.",
+        "camara_activada": (
+            "The camera is on. Now press and hold the space bar, say next, and release it to continue."
+        ),
+        "decir_next": "Say next to continue.",
+        "camara_error_permiso": (
+            "The camera is blocked. Allow it from the browser's address bar, then press C again."
+        ),
+        "camara_error_sin_camara": "No camera was found. Connect one, then press C again.",
+        "camara_error": "The camera could not start. Press C to try again.",
         "vista_menu": (
             "Choose a river. "
             + " ".join(f"{n}, {en}." for n, (_, en, _) in zip(NUMEROS_EN, RIOS_MENU))
@@ -169,15 +179,24 @@ NAVEGACION = {
     },
     "es": {
         "inicio": (
-            "Bienvenido a The Melody of Water. Para usar tu voz, mantén apretada la barra espaciadora mientras hablas, "
-            "y suéltala al terminar. Si el navegador pide permiso para usar el micrófono, acéptalo. "
-            "Di siguiente para continuar."
+            "Bienvenido a The Melody of Water. Vas a tocar los ríos con tus manos, así que primero "
+            "presiona la tecla C para prender la cámara. Si el navegador pide permiso para la cámara o el micrófono, acéptalo."
         ),
         "vista_bienvenida": (
             "Bienvenido a The Melody of Water, donde los datos satelitales de los grandes ríos del mundo "
-            "se convierten en música orquestal. Mantén apretada la barra espaciadora mientras hablas. "
-            "Di siguiente para continuar, o ayuda en cualquier momento."
+            "se convierten en música orquestal. Mantén apretada la barra espaciadora mientras hablas, "
+            "o di ayuda en cualquier momento."
         ),
+        "camara_pedir": "Primero presiona la tecla C para prender la cámara.",
+        "camara_activada": (
+            "La cámara está prendida. Ahora mantén apretada la barra espaciadora, di siguiente y suéltala para continuar."
+        ),
+        "decir_next": "Di siguiente para continuar.",
+        "camara_error_permiso": (
+            "La cámara está bloqueada. Permítela desde la barra de direcciones del navegador y presiona C de nuevo."
+        ),
+        "camara_error_sin_camara": "No se encontró ninguna cámara. Conecta una y presiona C de nuevo.",
+        "camara_error": "La cámara no pudo arrancar. Presiona C para intentar de nuevo.",
         "vista_menu": (
             "Elige un río. "
             + " ".join(f"{n}, {es}." for n, (_, _, es) in zip(NUMEROS_ES, RIOS_MENU))
