@@ -10,8 +10,6 @@
 // Cada tramo que cruza el cuadrado dispara una nota de la melodía en la próxima semicorchea, así
 // que la melodía nunca toca más rápido que eso. Si en una semicorchea se cruzaron varios tramos,
 // suena una sola nota que los resume (promedio de ancho y nivel, máximo de pendiente y amplitud).
-// Aparte de las capas, un triángulo suena cada TRIANGULO_CADA tramos cruzados. No hay grabación
-// de triángulo, se sintetiza.
 // Si el cuadrado se queda quieto, la orquesta hace una fermata sobre el acorde que estaba
 // sonando. Cada nota se sostiene hasta que su grabación se apaga del todo y ahí se vuelve a
 // disparar, en bucle. Al volver a moverse vuelve la música.
@@ -31,8 +29,6 @@
   const SEMICORCHEA = 60 / BPM / 4;
   const COMPAS = SEMICORCHEA * 16;
   const ANTICIPACION = 0.12;
-  const TRIANGULO_CADA = 10; // tramos cruzados entre dos golpes de triángulo
-  const TRIANGULO_NIVEL = 0.15;
 
   // Progresión en re menor, i VI III VII. Las voces de las cuerdas van ordenadas por importancia,
   // así un río angosto suena con la fundamental sola y uno ancho con el acorde completo.
@@ -107,7 +103,6 @@
   let ultimoRegistrado = null;
   let pasosDesdeEntrada = Infinity;
   let vozMelodia = null;
-  let tramosParaTriangulo = 0;
   let retomarAlFijar = false;
   let musica = 'original';
   const motivos = new Map();
@@ -121,7 +116,6 @@
     pendiente: { activa: true },
     amplitud: { activa: true },
   };
-  const triangulo = { activa: true };
 
   // 1. Carga de las muestras
 
@@ -284,18 +278,8 @@
       return ganancia;
     });
 
-    // Triángulo, con su propia ganancia de usuario (tecla 5). Pasa por la cercanía como el resto,
-    // así también se aleja y se panea. El ruido del golpe se arma una sola vez.
-    const salidaTriangulo = contexto.createGain();
-    salidaTriangulo.gain.value = triangulo.activa ? 1 : 0;
-    salidaTriangulo.connect(cercania);
-    const ruidoGolpe = contexto.createBuffer(1, Math.floor(contexto.sampleRate * 0.04), contexto.sampleRate);
-    const datosRuido = ruidoGolpe.getChannelData(0);
-    for (let k = 0; k < datosRuido.length; k++) datosRuido[k] = (Math.random() * 2 - 1) * (1 - k / datosRuido.length) ** 3;
-
     return {
       cercania, distancia, paneo, seco, envioReverb, filtroCuerdas, vocesCuerdas, filtroFermata, vocesFermata,
-      salidaTriangulo, ruidoGolpe,
     };
   }
 
@@ -538,45 +522,6 @@
     });
   }
 
-  // Triángulo. Se sintetiza con los modos de vibración de una barra libre, cada parcial a 1, 2,76,
-  // 5,40 y 8,93 veces la fundamental y con su propio decaimiento (los agudos se apagan antes).
-  // Cada parcial va doblado con otro desafinado unos hercios, que da el batido del metal, y el
-  // ataque es un golpe corto de ruido filtrado. La fundamental es un re, la tónica de la obra.
-  const FUNDAMENTAL_TRIANGULO = 440 * 2 ** ((86 - 69) / 12);
-  const PARCIALES_TRIANGULO = [
-    { razon: 1, nivel: 0.45, caida: 2.6, batido: 1.7 },
-    { razon: 2.756, nivel: 0.32, caida: 2, batido: 3.1 },
-    { razon: 5.404, nivel: 0.2, caida: 1.3, batido: 4.6 },
-    { razon: 8.933, nivel: 0.12, caida: 0.8, batido: 6.2 },
-  ];
-
-  function tocarTriangulo(tiempo, volumen) {
-    const nivel = TRIANGULO_NIVEL * volumen;
-    for (const parcial of PARCIALES_TRIANGULO) {
-      for (const [desvio, peso] of [[0, 1], [parcial.batido, 0.45]]) {
-        const oscilador = contexto.createOscillator();
-        oscilador.frequency.value = FUNDAMENTAL_TRIANGULO * parcial.razon + desvio;
-        const ganancia = contexto.createGain();
-        ganancia.gain.setValueAtTime(0, tiempo);
-        ganancia.gain.linearRampToValueAtTime(nivel * parcial.nivel * peso, tiempo + 0.002);
-        ganancia.gain.setTargetAtTime(0, tiempo + 0.002, parcial.caida / 4);
-        oscilador.connect(ganancia).connect(nodos.salidaTriangulo);
-        oscilador.start(tiempo);
-        oscilador.stop(tiempo + parcial.caida * 1.5);
-      }
-    }
-    const golpe = contexto.createBufferSource();
-    golpe.buffer = nodos.ruidoGolpe;
-    const filtro = contexto.createBiquadFilter();
-    filtro.type = 'bandpass';
-    filtro.frequency.value = 7000;
-    filtro.Q.value = 1.2;
-    const gananciaGolpe = contexto.createGain();
-    gananciaGolpe.gain.value = nivel * 0.6;
-    golpe.connect(filtro).connect(gananciaGolpe).connect(nodos.salidaTriangulo);
-    golpe.start(tiempo);
-  }
-
   // Un paso por semicorchea. Si desde el paso anterior se cruzaron tramos, la melodía toca una
   // nota de entrada que los resume, y la pendiente y la amplitud usan ese resumen. Si el cuadrado
   // sigue dentro del mismo tramo, la melodía sigue el motivo en corcheas.
@@ -584,12 +529,7 @@
     const entrada = resumir(cruzados);
     cruzados = [];
     pasosDesdeEntrada += 1;
-    // Si en esta semicorchea se completaron los tramos del triángulo suena un golpe, aunque se
-    // hayan completado de más de una vuelta, así no se acumulan golpes atrasados
-    const golpeTriangulo = tramosParaTriangulo >= TRIANGULO_CADA;
-    if (golpeTriangulo) tramosParaTriangulo %= TRIANGULO_CADA;
     if (quieto) return;
-    if (golpeTriangulo && triangulo.activa) tocarTriangulo(tiempo, paso % 4 === 0 ? 1 : 0.8);
     const tramo = entrada || tramoActual;
     if (!tramo || !tramo.tieneDatos) return;
     const acorde = acordeDe(paso);
@@ -727,13 +667,12 @@
     },
 
     // Al cambiar de río. Corta todo lo que suena y olvida el río anterior (tramo actual, tramos
-    // cruzados, motivos y cuenta del triángulo). Las capas prendidas y apagadas se mantienen.
+    // cruzados y motivos). Las capas prendidas y apagadas se mantienen.
     reiniciar() {
       tramoActual = null;
       cruzados = [];
       ultimoRegistrado = null;
       pasosDesdeEntrada = Infinity;
-      tramosParaTriangulo = 0;
       golpesArpa = 0;
       vozMelodia = null;
       motivos.clear();
@@ -751,7 +690,6 @@
       if (!nodos || tramo === ultimoRegistrado) return;
       ultimoRegistrado = tramo;
       cruzados.push(tramo);
-      tramosParaTriangulo += 1;
     },
 
     musicas: Object.keys(MUSICAS),
@@ -779,19 +717,6 @@
       const nombres = { cuerdas: 'Cuerdas', maderas: 'Maderas', arpa: 'Arpa y timbal', bajo: 'Contrabajo y cornos' };
       const grupo = Object.keys(nombres).find((g) => variableDe(g) === variable);
       return nombres[grupo];
-    },
-
-    trianguloCada: TRIANGULO_CADA,
-
-    // Cuántos tramos van cruzados hacia el próximo golpe de triángulo
-    tramosParaTriangulo() {
-      return Math.min(tramosParaTriangulo, TRIANGULO_CADA);
-    },
-
-    alternarTriangulo() {
-      triangulo.activa = !triangulo.activa;
-      if (nodos) nodos.salidaTriangulo.gain.setTargetAtTime(triangulo.activa ? 1 : 0, contexto.currentTime, 0.12);
-      return triangulo.activa;
     },
 
     // true cuando el cuadrado dejó de moverse, false cuando se vuelve a mover

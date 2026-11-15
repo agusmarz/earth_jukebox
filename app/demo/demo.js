@@ -115,7 +115,7 @@
     numero.toLocaleString('es-AR', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
   const DECIMALES = { ancho: 0, nivel: 1, pendiente: 1, amplitud: 1 };
 
-  // 1. Lista de capas en el panel, y abajo el triángulo
+  // 1. Lista de capas en el panel
   function crearFila(tecla, titulo, instrumento, valorInicial, alTocar) {
     const boton = document.createElement('button');
     boton.className = 'capa';
@@ -144,37 +144,11 @@
     filasCapas[capa.nombre] = crearFila(capa.tecla, capa.titulo, capa.instrumento, 'Sin tramo', () => alternar(capa));
   }
 
-  const TECLA_TRIANGULO = '5';
-  const CADA_TRIANGULO = window.Sonido.trianguloCada;
-  const filaTriangulo = crearFila(
-    TECLA_TRIANGULO, 'Triángulo', `Un golpe cada ${CADA_TRIANGULO} tramos cruzados`, `Faltan ${CADA_TRIANGULO} tramos`, alternarTriangulo,
-  );
-  let textoTriangulo = '';
-
   function alternar(capa) {
     const activa = window.Sonido.alternarCapa(capa.nombre);
     filasCapas[capa.nombre].boton.setAttribute('aria-pressed', String(activa));
     window.Sonido.confirmar(activa);
     anunciar(`${capa.titulo} ${activa ? 'prendido' : 'apagado'}`, true);
-  }
-
-  function alternarTriangulo() {
-    const activa = window.Sonido.alternarTriangulo();
-    filaTriangulo.boton.setAttribute('aria-pressed', String(activa));
-    window.Sonido.confirmar(activa);
-    anunciar(`Triángulo ${activa ? 'prendido' : 'apagado'}`, true);
-  }
-
-  // La barra del triángulo se llena con cada tramo cruzado y se vacía cuando suena
-  function mostrarTriangulo() {
-    const cruzados = window.Sonido.tramosParaTriangulo();
-    const faltan = CADA_TRIANGULO - cruzados;
-    const texto = faltan === 0 ? 'Suena' : faltan === 1 ? 'Falta 1 tramo' : `Faltan ${faltan} tramos`;
-    if (texto !== textoTriangulo) {
-      textoTriangulo = texto;
-      filaTriangulo.valor.textContent = texto;
-      filaTriangulo.relleno.style.width = `${Math.round((cruzados / CADA_TRIANGULO) * 100)}%`;
-    }
   }
 
   // 2. Tamaño del lienzo y dibujo de la base
@@ -299,7 +273,6 @@
       mostrarTramo(consulta.tramo);
       if (cercania > 0.5) anunciar(`A ${formato(consulta.tramo.km, 0)} kilómetros de la desembocadura`);
     }
-    mostrarTriangulo();
     dibujar(ganancia);
     requestAnimationFrame(actualizar);
   }
@@ -600,7 +573,7 @@
     dentroDelMapa = true;
     await window.Sonido.iniciar();
     indiceAnterior = -1;
-    anunciar('Mové el mouse o las flechas por el mapa. Teclas 1 a 5 para prender y apagar instrumentos, N para cambiar la normalización, M para cambiar la música.', true);
+    anunciar('Mové el mouse o las flechas por el mapa. Teclas 1 a 4 para prender y apagar instrumentos, N para cambiar la normalización, M para cambiar la música.', true);
   }
 
   lienzo.addEventListener('pointermove', (evento) => {
@@ -624,10 +597,6 @@
     const capa = CAPAS.find((c) => c.tecla === evento.key);
     if (capa) {
       alternar(capa);
-      return;
-    }
-    if (evento.key === TECLA_TRIANGULO) {
-      alternarTriangulo();
       return;
     }
     if (evento.key.toLowerCase() === TECLA_NORMALIZACION && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {

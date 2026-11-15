@@ -70,7 +70,6 @@ El río suena como una orquesta de instrumentos grabados. Cada característica d
 | 2 | Nivel mediano | Fagot, clarinete, oboe y flauta | Más alto el pelo de agua, más aguda la melodía, y la madera cambia según el nivel. Cada tramo tiene su propio motivo |
 | 3 | Pendiente | Arpa y timbal | Más pendiente, más notas de arpa por compás. El timbal marca la fundamental del acorde |
 | 4 | Amplitud | Contrabajo y cornos | Cuanto más sube y baja el agua, más se mueve el contrabajo y más crecen los cornos en cada compás |
-| 5 | Tramos cruzados | Triángulo | Suena un golpe cada 10 tramos cruzados, en la semicorchea siguiente. La barra del panel se llena a medida que cruzás tramos |
 
 ### Lógica musical
 
@@ -96,8 +95,6 @@ node pruebas/experimentos_sonido.js parana     # uno solo
 Carga `sonido.js` tal cual con un Web Audio falso que anota cada nota, simula el cuadrado quedándose en cada tramo y barriendo el cauce a 2, 6 y 20 tramos por segundo, y muestra una tabla con las tres músicas lado a lado. Mide, entre otras cosas, si la melodía ordena bien los tramos, cuánto salta dentro de un mismo tramo, si se oye el detalle local al barrir, cuántas notas rozan el acorde o quedan tapadas por el arpa y cuántas densidades distintas toma el bajo. No suena nada y tarda unos segundos.
 
 Cada tramo que cruza el cuadrado dispara una nota de la melodía en la semicorchea siguiente, así que la melodía nunca va más rápido que una nota por semicorchea (5,3 por segundo a 80 bpm) y queda siempre a tiempo con el resto de la orquesta. Para no saltear tramos cuando el mouse va rápido, `demo.js` recorre de a un píxel el camino entre un cuadro de animación y el siguiente. Si en una misma semicorchea se cruzan varios tramos suena una sola nota que los resume, con el promedio del ancho y del nivel y el máximo de la pendiente y la amplitud, para que un pico no se pierda. Mientras el cuadrado sigue dentro del mismo tramo, la melodía toca el motivo del tramo en corcheas. La forma de resumir cada característica es `RESUMEN` en `sonido.js`.
-
-El triángulo no usa grabaciones, se sintetiza con los cuatro primeros modos de vibración de una barra metálica, cada uno con su decaimiento y un batido leve, más un golpe corto de ruido. Cada cuántos tramos suena es `TRIANGULO_CADA` y su volumen `TRIANGULO_NIVEL`, los dos en `sonido.js`. Si en una semicorchea se completan los tramos de más de un golpe, suena uno solo.
 
 El volumen cae en forma logarítmica con la distancia al río, como un sonido real que se aleja. Fuera del cuadrado, cada vez que se duplica la distancia (más 30 px de referencia) el volumen baja 10 dB, y a partir de -36 dB, unos 330 px, ya no suena. Se ajusta con `REFERENCIA_PX`, `DB_POR_DUPLICACION` y `PISO_DB` en `demo.js`. La barra de cercanía muestra esos decibeles llevados a una escala de 0 a 1.
 
